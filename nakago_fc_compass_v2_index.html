@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>中郷FC Compass Ver.2</title>
+<style>
+:root{--bg:#f7f7fb;--card:#fff;--ink:#172033;--muted:#667085;--line:#d9dee8;--accent:#2563eb}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",Meiryo,sans-serif}
+header{background:linear-gradient(135deg,#2563eb,#06b6d4);color:#fff;padding:22px 16px}
+h1{font-size:24px;margin:0 0 4px}header p{margin:0;font-size:13px;opacity:.95}
+.wrap{max-width:850px;margin:0 auto;padding:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin:12px 0;box-shadow:0 2px 10px rgba(15,23,42,.04)}
+h2{font-size:18px;margin:0 0 12px}
+label{display:block;font-size:13px;font-weight:700;margin:10px 0 5px}
+input,select,textarea{width:100%;font-size:16px;padding:11px;border:1px solid #cfd6e4;border-radius:10px;background:#fff}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+button{appearance:none;border:0;border-radius:12px;background:var(--accent);color:#fff;font-weight:800;font-size:16px;padding:12px 14px;margin-top:10px;width:100%}
+button.sub{background:#eef4ff;color:#1d4ed8;border:1px solid #bfdbfe}
+button.danger{background:#fff1f2;color:#be123c;border:1px solid #fecdd3}
+.result{background:#f8fafc;border:1px dashed #94a3b8;border-radius:14px;padding:14px;white-space:pre-wrap;font-size:15px;line-height:1.65}
+.tabs{display:flex;gap:8px;margin:10px 0}.tabs button{margin:0;padding:10px;font-size:14px;background:#e5e7eb;color:#111827}.tabs button.on{background:#2563eb;color:#fff}
+section{display:none}section.show{display:block}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{border-bottom:1px solid #e5e7eb;text-align:left;padding:8px 4px}th{color:#475467}
+.small{font-size:12px;color:var(--muted);line-height:1.5}.pill{display:inline-block;background:#eef2ff;color:#3730a3;border-radius:999px;padding:3px 8px;font-size:12px;font-weight:700}
+@media(max-width:520px){.row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <h1>中郷FC Compass Ver.2</h1>
+  <p>中郷小学校 → 試合会場／ガソリン単価変更／応援車計算</p>
+</header>
+
+<div class="wrap">
+  <div class="tabs">
+    <button class="on" onclick="showTab('calc',this)">計算</button>
+    <button onclick="showTab('place',this)">行き先編集</button>
+    <button onclick="showTab('setting',this)">設定</button>
+  </div>
+
+  <section id="calc" class="show">
+    <div class="card">
+      <h2>遠征費計算</h2>
+      <label>行き先</label>
+      <select id="dest" onchange="loadDest();calc()"></select>
+
+      <div class="row">
+        <div><label>応援車 台数</label><input id="cars" type="number" min="0" value="1" oninput="calc()"></div>
+        <div><label>選手人数</label><input id="players" type="number" min="0" value="0" oninput="calc()"></div>
+      </div>
+
+      <div class="row">
+        <div><label>配車交通費／台</label><input id="carFee" type="number" min="0" oninput="calc()"></div>
+        <div><label>選手バス代／人</label><input id="busFee" type="number" min="0" oninput="calc()"></div>
+      </div>
+
+      <div class="row">
+        <div><label>距離 往復km</label><input id="km" type="number" min="0" step="0.1" oninput="calc()"></div>
+        <div><label>高速代 往復／台</label><input id="toll" type="number" min="0" oninput="calc()"></div>
+      </div>
+
+      <label>メモ</label>
+      <textarea id="memo" rows="2" placeholder="例：U12 TM、休日割引あり等" oninput="calc()"></textarea>
+
+      <button onclick="calc()">計算する</button>
+      <button class="sub" onclick="copyLine()">計算結果をコピー</button>
+    </div>
+
+    <div class="card">
+      <h2>結果</h2>
+      <div id="out" class="result"></div>
+      <p class="small">※距離・高速代は行き先編集で修正できます。中郷小学校から会場までの往復距離として登録してください。</p>
+    </div>
+  </section>
+
+  <section id="place">
+    <div class="card">
+      <h2>行き先を追加・修正</h2>
+      <label>遠征先名</label><input id="newName" placeholder="例：丸岡スポーツランド">
+      <div class="row">
+        <div><label>往復km</label><input id="newKm" type="number" step="0.1" placeholder="中郷小学校→会場→中郷小学校"></div>
+        <div><label>高速代 往復／台</label><input id="newToll" type="number" placeholder="ETC休日割引など反映後"></div>
+      </div>
+      <div class="row">
+        <div><label>配車交通費／台</label>
+          <select id="newCarFee"><option value="1500">下道 1,500円</option><option value="2000">高速 2,000円</option></select>
+        </div>
+        <div><label>選手バス代／人</label>
+          <select id="newBusFee"><option value="2500">日帰り 2,500円</option><option value="3000">宿泊 3,000円</option><option value="0">なし</option></select>
+        </div>
+      </div>
+      <button onclick="addDest()">追加する</button>
+      <button class="danger" onclick="resetDest()">初期状態に戻す</button>
+    </div>
+    <div class="card">
+      <h2>登録済み行き先</h2>
+      <div id="list"></div>
+    </div>
+  </section>
+
+  <section id="setting">
+    <div class="card">
+      <h2>共通設定</h2>
+      <div class="row">
+        <div><label>ガソリン単価 円/L</label><input id="gasPrice" type="number" value="175" oninput="saveSettings();calc()"></div>
+        <div><label>燃費 km/L</label><input id="fuelEco" type="number" value="15" step="0.1" oninput="saveSettings();calc()"></div>
+      </div>
+      <p class="small">ここを変えるだけで、全ての行き先のガソリン代が自動で変わります。</p>
+    </div>
+  </section>
+</div>
+
+<script>
+const yen=n=>Number(n||0).toLocaleString("ja-JP")+"円";
+const initDest=[
+ {name:"丸岡方面",km:150,toll:2400,carFee:2000,busFee:2500,memo:"中郷小学校→会場。敦賀IC〜鯖江IC想定。距離・高速代は確認後に修正"},
+ {name:"三国方面",km:170,toll:2400,carFee:2000,busFee:2500,memo:"中郷小学校→会場。敦賀IC〜鯖江IC想定。距離・高速代は確認後に修正"},
+ {name:"大飯方面",km:90,toll:0,carFee:1500,busFee:2500,memo:"往復下道想定。距離は確認後に修正"},
+ {name:"長野遠征",km:650,toll:0,carFee:2000,busFee:3000,memo:"宿泊想定。高速代・距離は確認後に修正"},
+ {name:"その他・手入力",km:0,toll:0,carFee:1500,busFee:0,memo:"必要な数字を直接入力"}
+];
+let dest=JSON.parse(localStorage.getItem("nakago_dest_v2")||"null")||initDest;
+let lastText="";
+
+function save(){localStorage.setItem("nakago_dest_v2",JSON.stringify(dest))}
+function saveSettings(){
+ localStorage.setItem("nakago_gasPrice",document.getElementById("gasPrice").value);
+ localStorage.setItem("nakago_fuelEco",document.getElementById("fuelEco").value);
+}
+function loadSettings(){
+ document.getElementById("gasPrice").value=localStorage.getItem("nakago_gasPrice")||175;
+ document.getElementById("fuelEco").value=localStorage.getItem("nakago_fuelEco")||15;
+}
+function loadPlaces(){
+ const s=document.getElementById("dest"); s.innerHTML="";
+ dest.forEach((d,i)=>s.innerHTML+=`<option value="${i}">${d.name}</option>`);
+ renderList(); loadDest();
+}
+function loadDest(){
+ const d=dest[Number(document.getElementById("dest").value)||0]||dest[0];
+ document.getElementById("km").value=d.km||0;
+ document.getElementById("toll").value=d.toll||0;
+ document.getElementById("carFee").value=d.carFee||1500;
+ document.getElementById("busFee").value=d.busFee||0;
+ document.getElementById("memo").value=d.memo||"";
+}
+function calc(){
+ const d=dest[Number(document.getElementById("dest").value)||0]||{name:""};
+ const cars=Number(document.getElementById("cars").value||0);
+ const players=Number(document.getElementById("players").value||0);
+ const km=Number(document.getElementById("km").value||0);
+ const toll=Number(document.getElementById("toll").value||0);
+ const carFee=Number(document.getElementById("carFee").value||0);
+ const busFee=Number(document.getElementById("busFee").value||0);
+ const gasPrice=Number(document.getElementById("gasPrice").value||0);
+ const fuelEco=Number(document.getElementById("fuelEco").value||1);
+ const gasCost=Math.round((km/fuelEco)*gasPrice);
+ const supportFee=cars*carFee;
+ const tollTotal=cars*toll;
+ const busTotal=players*busFee;
+ const grand=supportFee+tollTotal+busTotal;
+ lastText=
+`【中郷FC Compass 計算結果】
+行き先：${d.name}
+基準：中郷小学校 → 試合会場 → 中郷小学校
+往復距離：${km}km
+ガソリン単価：${gasPrice}円/L
+燃費：${fuelEco}km/L
+参考ガソリン代：${yen(gasCost)}／台
+
+応援車：${cars}台 × ${yen(carFee)} = ${yen(supportFee)}
+高速代：${cars}台 × ${yen(toll)} = ${yen(tollTotal)}
+${busFee?`選手バス代：${players}名 × ${yen(busFee)} = ${yen(busTotal)}`:"選手バス代：なし"}
+
+合計：${yen(grand)}
+メモ：${document.getElementById("memo").value||"なし"}`;
+ document.getElementById("out").textContent=lastText;
+}
+async function copyLine(){
+ if(!lastText)calc();
+ try{await navigator.clipboard.writeText(lastText);alert("コピーしたよ")}
+ catch(e){alert("コピーできない場合は、計算結果を長押ししてコピーしてね")}
+}
+function addDest(){
+ const name=document.getElementById("newName").value.trim();
+ if(!name){alert("遠征先名を入れてね");return}
+ dest.push({
+  name,
+  km:Number(document.getElementById("newKm").value||0),
+  toll:Number(document.getElementById("newToll").value||0),
+  carFee:Number(document.getElementById("newCarFee").value||1500),
+  busFee:Number(document.getElementById("newBusFee").value||0),
+  memo:"追加した行き先"
+ });
+ save();loadPlaces();
+ document.getElementById("newName").value="";
+ document.getElementById("newKm").value="";
+ document.getElementById("newToll").value="";
+}
+function delDest(i){if(confirm("削除する？")){dest.splice(i,1);save();loadPlaces();calc()}}
+function resetDest(){if(confirm("初期状態に戻す？追加した行き先も消えるよ")){dest=initDest;save();loadPlaces();calc()}}
+function renderList(){
+ const el=document.getElementById("list"); if(!el)return;
+ el.innerHTML="<table><tr><th>遠征先</th><th>km</th><th>高速</th><th></th></tr>"+
+ dest.map((d,i)=>`<tr><td>${d.name}</td><td>${d.km}</td><td>${yen(d.toll)}</td><td><button class="danger" style="padding:7px;margin:0;font-size:12px" onclick="delDest(${i})">削除</button></td></tr>`).join("")+
+ "</table>";
+}
+function showTab(id,btn){
+ document.querySelectorAll("section").forEach(s=>s.classList.remove("show"));
+ document.getElementById(id).classList.add("show");
+ document.querySelectorAll(".tabs button").forEach(b=>b.classList.remove("on"));
+ btn.classList.add("on");
+}
+loadSettings();loadPlaces();calc();
+</script>
+</body>
+</html>
