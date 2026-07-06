@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>中郷FC交通費コンパス Ver.3</title>
+<style>
+  :root{--bg:#f6f8fb;--card:#fff;--main:#0b8f9c;--sub:#e8f6f8;--txt:#1f2937;--muted:#64748b;--line:#e5e7eb;--warn:#fff7ed}
+  *{box-sizing:border-box} body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Yu Gothic',sans-serif;color:var(--txt)}
+  header{position:sticky;top:0;background:linear-gradient(135deg,#0b8f9c,#0ea5b7);color:white;padding:18px 16px;z-index:2;box-shadow:0 2px 10px #0002}
+  h1{font-size:22px;margin:0 0 4px} .ver{font-size:13px;opacity:.9}.wrap{max-width:760px;margin:0 auto;padding:14px}.card{background:var(--card);border-radius:18px;padding:16px;margin:12px 0;box-shadow:0 3px 14px #00000012}.title{font-weight:800;margin-bottom:12px;font-size:17px}label{font-size:13px;color:var(--muted);font-weight:700;display:block;margin:10px 0 5px}select,input{width:100%;font-size:18px;padding:12px;border:1px solid var(--line);border-radius:12px;background:white} .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}.pill{background:var(--sub);border-radius:999px;padding:8px 11px;font-size:13px;font-weight:700;color:#0f766e;display:inline-block;margin:3px 3px 0 0}.result{font-size:28px;font-weight:900;color:var(--main);line-height:1.25}.small{font-size:13px;color:var(--muted);line-height:1.5}.money{font-size:22px;font-weight:900}.row{display:flex;justify-content:space-between;gap:12px;border-top:1px solid var(--line);padding:12px 0}.row:first-child{border-top:0}.btn{border:0;border-radius:14px;background:var(--main);color:#fff;font-size:17px;font-weight:800;padding:13px 16px;width:100%;margin-top:10px}.ghost{background:#eef2f7;color:#334155}.note{background:var(--warn);border:1px solid #fed7aa;border-radius:14px;padding:12px;font-size:13px;line-height:1.6}.hidden{display:none}.footer{font-size:12px;color:#94a3b8;text-align:center;padding:18px}
+</style>
+</head>
+<body>
+<header><h1>中郷FC交通費コンパス</h1><div class="ver">Ver.3｜会場追加版・マイクロバス軽油対応</div></header>
+<div class="wrap">
+  <div class="card">
+    <div class="title">① 遠征先・カテゴリー</div>
+    <label>カテゴリー</label>
+    <select id="category"><option>4年</option><option>5年</option><option>6年</option><option selected>シゴロ（4・5・6年）</option><option>U10</option><option>U11</option><option>U12</option></select>
+    <label>会場</label>
+    <select id="venue"></select>
+    <div id="venueInfo" class="small" style="margin-top:10px"></div>
+  </div>
+
+  <div class="card">
+    <div class="title">② 応援車・配車計算</div>
+    <div class="grid">
+      <div><label>応援車台数</label><input id="cars" type="number" min="0" value="1"></div>
+      <div><label>交通費単価</label><select id="supportFee"><option value="1500">下道 1,500円</option><option value="2000" selected>高速 2,000円</option></select></div>
+    </div>
+    <div class="row"><span>応援車 支給合計</span><span class="money" id="supportTotal">0円</span></div>
+  </div>
+
+  <div class="card">
+    <div class="title">③ ガソリン代・高速代</div>
+    <div class="grid">
+      <div><label>ガソリン単価（円/L）</label><input id="gasPrice" type="number" step="0.1" value="169.4"></div>
+      <div><label>燃費（km/L）</label><input id="fuelEff" type="number" step="0.1" value="12"></div>
+    </div>
+    <div class="grid">
+      <div><label>高速代 片道（円）</label><input id="tollOneWay" type="number" step="10" value="0"></div>
+      <div><label>往復/片道</label><select id="tollMode"><option value="round" selected>往復で計算</option><option value="one">片道のみ</option></select></div>
+    </div>
+    <div class="row"><span>概算ガソリン代</span><span class="money" id="gasTotal">0円</span></div>
+    <div class="row"><span>高速代</span><span class="money" id="tollTotal">0円</span></div>
+  </div>
+
+  <div class="card">
+    <div class="title">④ マイクロバス（実給油量で計算）</div>
+    <div class="grid">
+      <div><label>軽油単価（円/L）</label><input id="dieselPrice" type="number" step="0.1" value="150"></div>
+      <div><label>実際の給油量（L）</label><input id="dieselLiters" type="number" step="0.1" value="0"></div>
+    </div>
+    <div class="grid">
+      <div><label>バス高速代 片道（円）</label><input id="busTollOneWay" type="number" step="10" value="0"></div>
+      <div><label>選手バス代</label><select id="busPlayerFee"><option value="2500">日帰り 2,500円</option><option value="3000">宿泊 3,000円</option></select></div>
+    </div>
+    <div><label>選手人数</label><input id="players" type="number" min="0" value="0"></div>
+    <div class="row"><span>軽油代（実費）</span><span class="money" id="dieselTotal">0円</span></div>
+    <div class="row"><span>バス高速代（往復）</span><span class="money" id="busTollTotal">0円</span></div>
+    <div class="row"><span>選手バス代 集金目安</span><span class="money" id="playerTotal">0円</span></div>
+  </div>
+
+  <div class="card">
+    <div class="title">⑤ まとめ</div>
+    <div class="result" id="summaryMain">0円</div>
+    <div class="small">応援車支給＋ガソリン概算＋高速代＋バス実費を合計した確認用です。</div>
+    <div id="summaryDetail" class="note" style="margin-top:12px"></div>
+    <button class="btn" onclick="copySummary()">LINE用まとめをコピー</button>
+    <button class="btn ghost" onclick="resetInputs()">入力をリセット</button>
+  </div>
+
+  <div class="footer">出発地：中郷小学校｜距離はGoogleマップスクショ登録値を使用</div>
+</div>
+<script>
+const venues = [
+ {name:'選択してください', oneWay:0, time:'', toll:0, rule:'', highway:false},
+ {name:'丹波自然運動公園', oneWay:119, time:'約1時間40分', toll:3090, rule:'美浜ICから（舞鶴若狭道）', highway:true},
+ {name:'ナダスタ内灘サッカー場', oneWay:145, time:'約2時間', toll:3400, rule:'敦賀ICから（石川県方面ルール）', highway:true},
+ {name:'眉丈台地スポーツ広場', oneWay:179, time:'約2時間20分', toll:3550, rule:'敦賀ICから（石川県方面ルール）', highway:true},
+ {name:'伊佐津川運動公園グラウンド', oneWay:81, time:'約1時間10分', toll:1840, rule:'美浜ICから（舞鶴若狭道）', highway:true}
+];
+const yen=n=>Math.round(Number(n)||0).toLocaleString()+'円';
+const el=id=>document.getElementById(id);
+function init(){venues.forEach((v,i)=>{let o=document.createElement('option');o.value=i;o.textContent=v.name;el('venue').appendChild(o)});el('venue').value=1;document.querySelectorAll('input,select').forEach(x=>x.addEventListener('input',calc));el('venue').addEventListener('change',venueChanged);venueChanged();}
+function venueChanged(){const v=venues[el('venue').value];el('supportFee').value=v.highway?'2000':'1500';el('tollOneWay').value=v.toll||0;calc();}
+function calc(){const v=venues[el('venue').value];const round=v.oneWay*2;const cars=+el('cars').value||0;const support= cars*(+el('supportFee').value||0);const gas= round/(+el('fuelEff').value||1)*(+el('gasPrice').value||0);const toll=(+el('tollOneWay').value||0)*(el('tollMode').value==='round'?2:1);const diesel=(+el('dieselLiters').value||0)*(+el('dieselPrice').value||0);const busToll=(+el('busTollOneWay').value||0)*2;const player=(+el('players').value||0)*(+el('busPlayerFee').value||0);const total=support+gas+toll+diesel+busToll;
+ el('venueInfo').innerHTML=`<span class='pill'>片道 ${v.oneWay}km</span><span class='pill'>往復 ${round}km</span><span class='pill'>${v.time||'時間未登録'}</span><span class='pill'>${v.rule||'ルール未登録'}</span>`;
+ el('supportTotal').textContent=yen(support); el('gasTotal').textContent=yen(gas); el('tollTotal').textContent=yen(toll); el('dieselTotal').textContent=yen(diesel); el('busTollTotal').textContent=yen(busToll); el('playerTotal').textContent=yen(player); el('summaryMain').textContent=yen(total);
+ el('summaryDetail').innerText=`【${v.name}】\nカテゴリー：${el('category').value}\n片道：${v.oneWay}km／往復：${round}km\n高速ルール：${v.rule}\n応援車：${cars}台 × ${yen(el('supportFee').value)} = ${yen(support)}\nガソリン概算：${yen(gas)}\n高速代：${yen(toll)}\nバス軽油代：${yen(diesel)}\nバス高速代：${yen(busToll)}\n選手バス代集金目安：${yen(player)}\n確認用合計：${yen(total)}`;
+}
+function copySummary(){navigator.clipboard.writeText(el('summaryDetail').innerText).then(()=>alert('LINE用まとめをコピーしたよ'))}
+function resetInputs(){el('cars').value=1;el('gasPrice').value=169.4;el('fuelEff').value=12;el('dieselPrice').value=150;el('dieselLiters').value=0;el('busTollOneWay').value=0;el('players').value=0;venueChanged();}
+init();
+</script>
+</body>
+</html>
