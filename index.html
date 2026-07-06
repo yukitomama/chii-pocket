@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0f766e">
-<title>中郷FC交通費コンパス Ver.2</title>
+<title>中郷FC交通費コンパス Ver.3</title>
 <style>
 :root{--bg:#f5faf8;--card:#fff;--ink:#14211f;--muted:#667a76;--main:#0f766e;--sub:#14b8a6;--line:#dce9e6;--soft:#e7f7f4;--warn:#fff7ed;--danger:#dc2626}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",Meiryo,sans-serif}
@@ -47,8 +47,8 @@ table{width:100%;border-collapse:collapse;font-size:12px}th,td{border-bottom:1px
 <body>
 <div class="app">
 <section class="hero">
-  <h1>中郷FC交通費コンパス<br>Ver.2</h1>
-  <p>35会場登録済み。中郷小学校基準で、応援班の支払交通費をスマホで計算。</p>
+  <h1>中郷FC交通費コンパス<br>Ver.3</h1>
+  <p>35会場登録済み。ガソリン単価を一番上で変更できる、ちはる専用版。</p>
 </section>
 
 <div class="tabs">
@@ -60,6 +60,22 @@ table{width:100%;border-collapse:collapse;font-size:12px}th,td{border-bottom:1px
 </div>
 
 <section id="calc" class="pane">
+
+  <div class="card result" style="border-color:#99f6e4">
+    <h2 class="title">⛽ ガソリン単価</h2>
+    <p class="mini">ここを変えると、全会場のガソリン代がすぐ再計算されるよ。</p>
+    <div class="stepper" style="grid-template-columns:58px 1fr 58px;margin-top:10px">
+      <button class="btn secondary" onclick="stepGas(-1)">−</button>
+      <div class="num"><span id="gasTopView">180</span><span style="font-size:15px"> 円/L</span></div>
+      <button class="btn secondary" onclick="stepGas(1)">＋</button>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn gray" onclick="stepGas(-5)">−5円</button>
+      <button class="btn gray" onclick="stepGas(5)">＋5円</button>
+    </div>
+    <div class="label">直接入力</div>
+    <input id="gasTopInput" type="number" inputmode="numeric" placeholder="例：180">
+  </div>
   <div class="card">
     <h2 class="title">🚗 応援車交通費</h2>
     <div class="row">
@@ -213,6 +229,8 @@ function calcData(){
 }
 function calc(){
   state.roundTrip=roundTrip.checked; state.useToll=useToll.checked; state.paid=paid.checked; state.memo=memo.value; state.category=category.value;
+  if(document.activeElement===gasTopInput){ state.gasPrice=+gasTopInput.value||0; gasPrice.value=state.gasPrice; }
+  gasTopInput.value=state.gasPrice; gasTopView.textContent=state.gasPrice;
   const x=calcData();
   normalView.textContent=state.normal; keiView.textContent=state.kei; carCount.textContent=x.count+'台';
   total.textContent=yen(x.total);
@@ -286,6 +304,13 @@ ${lines.join('\n') || '□ 名前を追加してください'}
 支払合計　${yen(totalPayee)}`;
 }
 function step(k,v){state[k]=Math.max(0,(state[k]||0)+v);calc()}
+function stepGas(v){
+  state.gasPrice=Math.max(0,(+state.gasPrice||0)+v);
+  gasPrice.value=state.gasPrice;
+  gasTopInput.value=state.gasPrice;
+  gasTopView.textContent=state.gasPrice;
+  calc();
+}
 function applyFilter(){
   const q=searchVenue.value.trim();
   filtered = q ? state.venues.filter(v=>(v.name+v.area+(v.note||'')).includes(q)) : state.venues.slice();
@@ -297,7 +322,7 @@ function renderFavorites(){
   favoriteChips.innerHTML=state.favorites.map(f=>`<button class="chip" onclick="searchVenue.value='${f}';applyFilter()">${f}</button>`).join('');
 }
 function saveFavorites(){state.favorites=favoriteInput.value.split(/[、,\n]/).map(s=>s.trim()).filter(Boolean);persist();renderFavorites();toast('お気に入りを保存したよ')}
-function saveSettings(){state.gasPrice=+gasPrice.value||0;state.fuelKmL=+fuelKmL.value||1;state.roundMode=roundMode.value;state.roundType=roundType.value;toast('設定を保存したよ');calc()}
+function saveSettings(){state.gasPrice=+gasPrice.value||0;state.fuelKmL=+fuelKmL.value||1;state.roundMode=roundMode.value;state.roundType=roundType.value;gasTopInput.value=state.gasPrice; gasTopView.textContent=state.gasPrice; toast('設定を保存したよ');calc()}
 function addPayee(){state.payees.push({name:'',type:'normal'});renderPayees();persist()}
 function renderPayees(){
   payeeRows.innerHTML='';
@@ -350,14 +375,14 @@ async function copyText(id){try{await navigator.clipboard.writeText(document.get
 function toast(t){let el=document.getElementById('toast');el.textContent=t;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),1700)}
 function renderVenueTable(){venueTable.innerHTML='<tr><th>会場</th><th>片道</th><th>ルート</th></tr>'+state.venues.map(v=>`<tr><td>${v.name}<br><span class="mini">${v.area}</span></td><td class="right">${v.one}km</td><td>${routeInfo(v).name}</td></tr>`).join('')}
 function init(){
-  gasPrice.value=state.gasPrice; fuelKmL.value=state.fuelKmL; roundMode.value=state.roundMode; roundType.value=state.roundType;
+  gasPrice.value=state.gasPrice; gasTopInput.value=state.gasPrice; gasTopView.textContent=state.gasPrice; fuelKmL.value=state.fuelKmL; roundMode.value=state.roundMode; roundType.value=state.roundType;
   roundTrip.checked=state.roundTrip; useToll.checked=state.useToll; paid.checked=state.paid; category.value=state.category||'U12'; memo.value=state.memo||'';
   favoriteInput.value=state.favorites.join('、');
   renderFavorites(); applyFilter(); renderPayees(); renderHistory(); renderVenueTable();
 }
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.pane').forEach(p=>p.classList.add('hidden'));document.getElementById(b.dataset.tab).classList.remove('hidden');window.scrollTo(0,0);renderHistory();});
-document.addEventListener('input',e=>{if(['searchVenue'].includes(e.target.id))applyFilter(); if(['dest','roundTrip','useToll','paid','memo','category','gameDate'].includes(e.target.id))calc();});
-document.addEventListener('change',e=>{if(['dest','roundTrip','useToll','paid','memo','category','gameDate'].includes(e.target.id))calc();});
+document.addEventListener('input',e=>{if(['searchVenue'].includes(e.target.id))applyFilter(); if(['dest','roundTrip','useToll','paid','memo','category','gameDate','gasTopInput'].includes(e.target.id))calc();});
+document.addEventListener('change',e=>{if(['dest','roundTrip','useToll','paid','memo','category','gameDate','gasTopInput'].includes(e.target.id))calc();});
 init();
 </script>
 </body>
