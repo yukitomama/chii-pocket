@@ -770,6 +770,25 @@
       font-weight:700;
     }
     .check-row input{width:20px;min-height:20px;margin:0}
+    .category-checks{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:8px;
+    }
+    .category-choice{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      min-height:42px;
+      padding:8px 10px;
+      border:1px solid var(--line);
+      border-radius:13px;
+      color:#624e57;
+      background:#fffafd;
+      font-size:12px;
+      font-weight:800;
+    }
+    .category-choice input{width:19px;min-height:19px;margin:0}
     .vehicle-fields{
       display:none;
       grid-column:1/-1;
@@ -1176,9 +1195,9 @@
         </div>
         <div class="settings-card">
           <h3>このバージョンでできること</h3>
-          <p>家庭・選手・父母・車両情報、カテゴリー別応援班、担当一覧、早見一覧に加え、遠征問診票の途中保存・編集・A4印刷ができます。</p>
+          <p>選手の複数カテゴリー、家庭ごとの応援車両、カテゴリー別応援班、担当一覧、早見一覧、遠征問診票の途中保存・編集・A4印刷ができます。千春だけのメモは共有用の印刷・PDFには表示しません。</p>
           <div class="settings-list">
-            <div class="settings-row"><span>バージョン</span><b>Ver.4 遠征問診票版</b></div>
+            <div class="settings-row"><span>バージョン</span><b>Ver.5 データ整理版</b></div>
             <div class="settings-row"><span>次の追加</span><b>配車表</b></div>
           </div>
         </div>
@@ -1206,6 +1225,19 @@
           <section class="form-card">
             <div class="form-card-head"><div><h3>家庭</h3><p class="hint">一覧に表示する家庭名です</p></div></div>
             <label class="field"><span>家庭名</span><input id="household-name" required placeholder="例：小林家"></label>
+          </section>
+
+          <section class="form-card">
+            <div class="form-card-head"><div><h3>家庭の応援車両</h3><p class="hint">父・母で分けず、各家庭1台だけ登録します</p></div></div>
+            <label class="check-row"><input type="checkbox" id="household-vehicle-available">応援車両を出せる</label>
+            <div class="vehicle-fields" id="household-vehicle-fields" style="margin-top:10px">
+              <div class="vehicle-grid">
+                <label class="field"><span>車種</span><select id="household-vehicle-type"><option value="普通自動車">普通自動車</option><option value="軽自動車">軽自動車</option></select></label>
+                <label class="field"><span>選手乗車可能人数</span><input id="household-vehicle-capacity" type="number" min="0" max="8" inputmode="numeric" placeholder="例：3"></label>
+                <label class="field"><span>荷物スペース</span><select id="household-vehicle-luggage"><option>大</option><option selected>中</option><option>小</option></select></label>
+                <label class="field"><span>遠征対応</span><select id="household-vehicle-trip-type"><option>日帰り・宿泊どちらも</option><option>日帰りのみ</option><option>宿泊のみ</option></select></label>
+              </div>
+            </div>
           </section>
 
           <div id="parent-editors"></div>
@@ -1433,7 +1465,39 @@
     var currentPrintTripId = "";
 
     function blankState(){
-      return {version:2,households:[],roles:[],trips:[],updatedAt:null};
+      return {version:3,households:[],roles:[],trips:[],updatedAt:null};
+    }
+
+    function playerCategoryList(player){
+      var value = player || {};
+      var result = Array.isArray(value.categories) ? value.categories.slice() : [];
+      if(value.category && result.indexOf(value.category) === -1) result.unshift(value.category);
+      return result.map(function(item){return String(item || "").trim();}).filter(function(item,index,list){
+        return item && list.indexOf(item) === index;
+      });
+    }
+
+    function playerHasCategory(player,category){
+      return !category || playerCategoryList(player).indexOf(category) !== -1;
+    }
+
+    function playerCategoryLabel(player){
+      return playerCategoryList(player).join("・");
+    }
+
+    function blankVehicle(){
+      return {available:false,type:"普通自動車",capacity:"",luggage:"中",tripType:"日帰り・宿泊どちらも"};
+    }
+
+    function normalizeVehicle(vehicle){
+      var value = vehicle && typeof vehicle === "object" ? vehicle : {};
+      return {
+        available:!!value.available,
+        type:value.type === "軽自動車" ? "軽自動車" : "普通自動車",
+        capacity:value.capacity == null ? "" : String(value.capacity),
+        luggage:["大","中","小"].indexOf(value.luggage) !== -1 ? value.luggage : "中",
+        tripType:["日帰り・宿泊どちらも","日帰りのみ","宿泊のみ"].indexOf(value.tripType) !== -1 ? value.tripType : "日帰り・宿泊どちらも"
+      };
     }
 
     function loadState(){
@@ -1445,14 +1509,19 @@
         parsed.households = Array.isArray(parsed.households) ? parsed.households : [];
         parsed.roles = Array.isArray(parsed.roles) ? parsed.roles : [];
         parsed.trips = Array.isArray(parsed.trips) ? parsed.trips : [];
-        return migrateState(parsed);
+        var previousVersion = parsed.version;
+        var migrated = migrateState(parsed);
+        if(previousVersion !== migrated.version){
+          try{localStorage.setItem(STORAGE_KEY,JSON.stringify(migrated));}catch(ignore){}
+        }
+        return migrated;
       }catch(error){
         return blankState();
       }
     }
 
     function migrateState(data){
-      data.version = 2;
+      data.version = 3;
       data.households = Array.isArray(data.households) ? data.households : [];
       data.roles = Array.isArray(data.roles) ? data.roles : [];
       data.trips = Array.isArray(data.trips) ? data.trips : [];
@@ -1463,6 +1532,9 @@
         household.players.forEach(function(player){
           if(!player.id) player.id = id("player");
           if(typeof player.pledge !== "boolean") player.pledge = false;
+          player.categories = playerCategoryList(player);
+          player.category = player.categories[0] || "";
+          if(typeof player.printNote !== "string") player.printNote = "";
         });
         var fallbackCategory = household.players.length ? household.players[0].category || "" : "";
         household.parents.forEach(function(parent){
@@ -1481,6 +1553,11 @@
             }).filter(function(entry){return entry.category || entry.group;});
           }
         });
+        var legacyVehicles = household.parents.map(function(parent){return parent && parent.vehicle;}).filter(function(vehicle){return vehicle && typeof vehicle === "object";});
+        var legacyVehicle = legacyVehicles.find(function(vehicle){return vehicle.available;})
+          || legacyVehicles.find(function(vehicle){return vehicle.capacity !== "" && vehicle.capacity != null;})
+          || null;
+        household.vehicle = normalizeVehicle(household.vehicle || legacyVehicle || blankVehicle());
       });
       data.trips = data.trips.map(function(trip){
         var normalized = Object.assign(blankTrip(),trip || {});
@@ -1576,7 +1653,7 @@
       var exportedAt = now.toISOString();
       var payload = {
         app:"Chii Pocket",
-        formatVersion:1,
+        formatVersion:2,
         exportedAt:exportedAt,
         data:state
       };
@@ -1719,11 +1796,12 @@
     function householdSearchText(h){
       var parts = [h.name];
       (h.players || []).forEach(function(p){
-        parts.push(p.name,p.kana,p.school,p.grade,p.category,p.number,p.memo);
+        parts.push(p.name,p.kana,p.school,p.grade,playerCategoryList(p).join(" "),p.number,p.printNote,p.memo);
       });
       (h.parents || []).forEach(function(p){
-        parts.push(p.name,p.lineName,parentSupportLabels(p).join(" "),p.vehicle && p.vehicle.type);
+        parts.push(p.name,p.lineName,parentSupportLabels(p).join(" "));
       });
+      if(h.vehicle) parts.push(h.vehicle.type,h.vehicle.capacity,h.vehicle.luggage,h.vehicle.tripType);
       (h.siblings || []).forEach(function(s){parts.push(s.name,s.grade);});
       return norm(parts.join(" "));
     }
@@ -1744,7 +1822,7 @@
         if(status !== memberStatus) return false;
         if(search && householdSearchText(h).indexOf(search) === -1) return false;
         if(grade && !(h.players || []).some(function(p){return p.grade === grade;})) return false;
-        if(category && !(h.players || []).some(function(p){return p.category === category;})) return false;
+        if(category && !(h.players || []).some(function(p){return playerHasCategory(p,category);})){return false;}
         return true;
       });
       list.sort(function(a,b){return String(a.name || "").localeCompare(String(b.name || ""),"ja");});
@@ -1761,28 +1839,29 @@
 
       host.innerHTML = list.map(function(h){
         var players = h.players || [];
-        var parents = (h.parents || []).filter(function(p){return p.name || p.lineName || (p.vehicle && p.vehicle.available);});
+        var parents = (h.parents || []).filter(function(p){return p.name || p.lineName || p.photo || parentSupportLabels(p).length;});
         var playerChips = players.length ? players.map(function(p){
-          return "<span class='chip'>" + esc(p.grade || "学年未設定") + " " + esc(p.name || "名前未入力") + (p.category ? "・" + esc(p.category) : "") + "</span>";
+          var categoryLabel = playerCategoryLabel(p);
+          return "<span class='chip'>" + esc(p.grade || "学年未設定") + " " + esc(p.name || "名前未入力") + (categoryLabel ? "・" + esc(categoryLabel) : "") + "</span>";
         }).join("") : "<span class='chip'>選手未登録</span>";
         var people = parents.map(function(p){
-          var vehicle = "";
-          if(p.vehicle && p.vehicle.available){
-            vehicle = "／" + esc(p.vehicle.type || "車種未設定") + "・選手" + esc(p.vehicle.capacity || 0) + "人";
-          }
           var groupLabels = parentSupportLabels(p);
           var group = groupLabels.length ? "／" + groupLabels.map(esc).join("・") : "";
           var lineName = p.lineName ? "（LINE：" + esc(p.lineName) + "）" : "";
           var roleNames = parentRoleNames(p.name);
           var roles = roleNames.length ? "<div class='chips' style='margin-top:4px'>" + roleNames.map(function(r){return "<span class='chip'>" + esc(r) + "</span>";}).join("") + "</div>" : "";
-          return "<div class='person-line'>" + avatarHtml(p.photo,p.name,p.relation) + "<div><b>" + esc(p.relation || "保護者") + "：" + esc(p.name || "名前未入力") + "</b>" + lineName + group + vehicle + roles + "</div></div>";
+          return "<div class='person-line'>" + avatarHtml(p.photo,p.name,p.relation) + "<div><b>" + esc(p.relation || "保護者") + "：" + esc(p.name || "名前未入力") + "</b>" + lineName + group + roles + "</div></div>";
         }).join("");
         if(!people) people = "<div class='person-line'><span class='mini-avatar'>親</span><div>保護者は未登録です</div></div>";
+        var vehicle = normalizeVehicle(h.vehicle);
+        var vehicleLine = vehicle.available
+          ? "<div class='card-sub'>🚗 応援車両：" + esc(vehicle.type) + "・選手" + esc(vehicle.capacity || 0) + "人・荷物" + esc(vehicle.luggage) + "・" + esc(vehicle.tripType) + "</div>"
+          : "";
         var siblings = (h.siblings || []).length ? "<div class='card-sub'>兄弟姉妹：" + (h.siblings || []).map(function(s){return esc(s.name) + (s.grade ? "（" + esc(s.grade) + "）" : "");}).join("、") + "</div>" : "";
         var actions = h.status === "archived"
           ? "<button class='small-btn' type='button' data-household-restore='" + esc(h.id) + "'>在団中へ戻す</button><button class='danger-btn' type='button' data-household-delete='" + esc(h.id) + "'>完全に削除</button>"
           : "<button class='small-btn' type='button' data-household-edit='" + esc(h.id) + "'>編集</button><button class='small-btn' type='button' data-household-archive='" + esc(h.id) + "'>卒団・退団へ移動</button>";
-        return "<article class='household-card'><div class='card-top'><div><h3>" + esc(h.name || "家庭名なし") + "</h3><div class='card-sub'>選手" + players.length + "名・保護者" + parents.filter(function(p){return p.name;}).length + "名</div>" + siblings + "</div><span class='badge " + (h.status === "archived" ? "gray" : "green") + "'>" + (h.status === "archived" ? "卒団・退団済み" : "在団中") + "</span></div><div class='chips'>" + playerChips + "</div><div class='people'>" + people + "</div><div class='actions'>" + actions + "</div></article>";
+        return "<article class='household-card'><div class='card-top'><div><h3>" + esc(h.name || "家庭名なし") + "</h3><div class='card-sub'>選手" + players.length + "名・保護者" + parents.filter(function(p){return p.name;}).length + "名</div>" + siblings + vehicleLine + "</div><span class='badge " + (h.status === "archived" ? "gray" : "green") + "'>" + (h.status === "archived" ? "卒団・退団済み" : "在団中") + "</span></div><div class='chips'>" + playerChips + "</div><div class='people'>" + people + "</div><div class='actions'>" + actions + "</div></article>";
       }).join("");
     }
 
@@ -1833,23 +1912,18 @@
           var labels = parentSupportLabels(parent);
           return labels.length ? (parent.relation || "保護者") + "：" + labels.join("・") : "";
         }).filter(Boolean);
-        var vehicles = parents.filter(function(parent){return parent.vehicle && parent.vehicle.available;});
-        var vehicleLabel = "";
-        if(vehicles.length === 1){
-          vehicleLabel = vehicles[0].vehicle.capacity || "可";
-        }else if(vehicles.length > 1){
-          vehicleLabel = vehicles.map(function(parent){
-            return (parent.relation || "親") + (parent.vehicle.capacity || "可");
-          }).join("/");
-        }
+        var householdVehicle = normalizeVehicle(household.vehicle);
+        var vehicleLabel = householdVehicle.available ? (householdVehicle.capacity || "可") : "";
         (household.players || []).forEach(function(player){
           var siblingNames = (household.players || []).filter(function(other){return other.id !== player.id;}).map(function(other){return other.name;});
           siblingNames = siblingNames.concat((household.siblings || []).map(function(sibling){return sibling.name;})).filter(Boolean);
-          var notes = Array.from(new Set(roleLabels)).concat(player.memo ? [player.memo] : []);
+          var notes = Array.from(new Set(roleLabels)).concat(player.printNote ? [player.printNote] : []);
+          var playerCategories = playerCategoryList(player);
           rows.push({
             player:player,
             grade:player.grade || "未設定",
-            category:player.category || "",
+            category:playerCategories.join("／"),
+            categorySort:playerCategories[0] || "",
             motherLine:mother.lineName || mother.name || "",
             fatherLine:father.lineName || father.name || "",
             support:supportLabels.join("／"),
@@ -1865,8 +1939,8 @@
         if(gradeA < 0) gradeA = 99;
         if(gradeB < 0) gradeB = 99;
         if(gradeA !== gradeB) return gradeA - gradeB;
-        var categoryA = categories.indexOf(a.category);
-        var categoryB = categories.indexOf(b.category);
+        var categoryA = categories.indexOf(a.categorySort);
+        var categoryB = categories.indexOf(b.categorySort);
         if(categoryA < 0) categoryA = 99;
         if(categoryB < 0) categoryB = 99;
         if(categoryA !== categoryB) return categoryA - categoryB;
@@ -1950,11 +2024,13 @@
         if(household.status === "archived") return;
         (household.players || []).forEach(function(player){
           if(!player.name) return;
+          var playerCategories = playerCategoryList(player);
           players.push({
             playerId:player.id || "",
             name:player.name || "",
             grade:player.grade || "",
-            category:player.category || "",
+            category:playerCategories[0] || "",
+            categories:playerCategories,
             householdName:household.name || ""
           });
         });
@@ -2025,7 +2101,8 @@
         return !player.playerId || selectedIds.indexOf(player.playerId) === -1;
       });
       picker.innerHTML = "<option value=''>選手を選択</option>" + available.map(function(player){
-        return "<option value='" + esc(player.playerId) + "'>" + esc(player.category ? player.category + "／" : "") + esc(player.grade ? player.grade + " " : "") + esc(player.name) + "</option>";
+        var categoryLabel = (player.categories || []).join("・");
+        return "<option value='" + esc(player.playerId) + "'>" + esc(categoryLabel ? categoryLabel + "／" : "") + esc(player.grade ? player.grade + " " : "") + esc(player.name) + "</option>";
       }).join("");
     }
 
@@ -2054,7 +2131,7 @@
         showToast("先にカテゴリーを選んでね");
         return;
       }
-      var matching = activePlayerRecords().filter(function(player){return player.category === category;});
+      var matching = activePlayerRecords().filter(function(player){return (player.categories || []).indexOf(category) !== -1;});
       if(!matching.length){
         showToast(category + "の登録選手が見つかりません");
         return;
@@ -2067,7 +2144,7 @@
           playerId:record.playerId || "",
           name:record.name || "",
           grade:record.grade || "",
-          category:record.category || "",
+          category:category,
           attendance:"未定",
           lodging:"なし",
           lunchDay1:"未定",
@@ -2213,13 +2290,12 @@
         name:"",
         lineName:"",
         supportGroups:[],
-        photo:"",
-        vehicle:{available:false,type:"普通自動車",capacity:"",luggage:"中",tripType:"日帰り・宿泊どちらも"}
+        photo:""
       };
     }
 
     function blankPlayer(){
-      return {id:id("player"),name:"",kana:"",photo:"",grade:"",category:"",number:"",school:"",pledge:false,supportDuty:false,memo:""};
+      return {id:id("player"),name:"",kana:"",photo:"",grade:"",category:"",categories:[],number:"",school:"",pledge:false,supportDuty:false,printNote:"",memo:""};
     }
 
     function photoControlHtml(photo,label){
@@ -2236,9 +2312,15 @@
         + "</div>";
     }
 
+    function categoryChoicesHtml(player){
+      var selected = playerCategoryList(player);
+      return "<div class='field full'><span>カテゴリー（複数選択できます）</span><div class='category-checks'>" + categories.map(function(category){
+        return "<label class='category-choice'><input type='checkbox' data-player-category value='" + esc(category) + "'" + (selected.indexOf(category) !== -1 ? " checked" : "") + ">" + esc(category) + "</label>";
+      }).join("") + "</div></div>";
+    }
+
     function parentEditorHtml(parent,index){
       var p = parent || blankParent(index === 0 ? "父" : "母");
-      var v = p.vehicle || blankParent("").vehicle;
       var groupEntries = Array.isArray(p.supportGroups) && p.supportGroups.length
         ? p.supportGroups
         : [{id:id("support"),category:"",group:""}];
@@ -2249,13 +2331,6 @@
         + "<label class='field'><span>名前</span><input data-parent-field='name' value='" + esc(p.name || "") + "' placeholder='氏名'></label>"
         + "<label class='field'><span>LINE登録名</span><input data-parent-field='lineName' value='" + esc(p.lineName || "") + "' placeholder='LINEで見える名前'></label>"
         + "<div class='full'><div class='form-card-head' style='margin:2px 0 8px'><div><span class='label'>カテゴリー別の応援班</span><p class='hint'>U10／A班、U11／B班のように複数追加できます</p></div><button class='small-btn' type='button' data-add-support>＋ 追加</button></div><div class='support-list' data-support-list>" + groupEntries.map(supportEntryHtml).join("") + "</div></div>"
-        + "<label class='check-row full'><input type='checkbox' data-parent-field='vehicleAvailable'" + (v.available ? " checked" : "") + ">応援車両を出せる</label>"
-        + "<div class='vehicle-fields " + (v.available ? "show" : "") + "' data-vehicle-fields><div class='vehicle-grid'>"
-        + "<label class='field'><span>車種</span><select data-parent-field='vehicleType'><option value='普通自動車'" + (v.type === "普通自動車" ? " selected" : "") + ">普通自動車</option><option value='軽自動車'" + (v.type === "軽自動車" ? " selected" : "") + ">軽自動車</option></select></label>"
-        + "<label class='field'><span>選手乗車可能人数</span><input type='number' min='0' max='8' inputmode='numeric' data-parent-field='capacity' value='" + esc(v.capacity || "") + "' placeholder='例：3'></label>"
-        + "<label class='field'><span>荷物スペース</span><select data-parent-field='luggage'>" + optionHtml(["大","中","小"],v.luggage || "中",null) + "</select></label>"
-        + "<label class='field'><span>遠征対応</span><select data-parent-field='tripType'>" + optionHtml(["日帰り・宿泊どちらも","日帰りのみ","宿泊のみ"],v.tripType || "日帰り・宿泊どちらも",null) + "</select></label>"
-        + "</div></div>"
         + "</div></section>";
     }
 
@@ -2268,12 +2343,13 @@
         + "<label class='field'><span>名前</span><input data-player-field='name' value='" + esc(p.name || "") + "' placeholder='選手名'></label>"
         + "<label class='field'><span>フリガナ</span><input data-player-field='kana' value='" + esc(p.kana || "") + "' placeholder='カタカナ'></label>"
         + "<label class='field'><span>学年</span><select data-player-field='grade'>" + optionHtml(grades,p.grade || "","未設定") + "</select></label>"
-        + "<label class='field'><span>カテゴリー</span><select data-player-field='category'>" + optionHtml(categories,p.category || "","未設定") + "</select></label>"
+        + categoryChoicesHtml(p)
         + "<label class='field'><span>背番号</span><input data-player-field='number' value='" + esc(p.number || "") + "' inputmode='numeric' placeholder='例：23'></label>"
         + "<label class='field'><span>学校名</span><input data-player-field='school' value='" + esc(p.school || "") + "' placeholder='例：中郷小学校'></label>"
         + "<label class='check-row full'><input type='checkbox' data-player-field='pledge'" + (p.pledge ? " checked" : "") + ">誓約書を提出済み</label>"
         + "<label class='check-row full'><input type='checkbox' data-player-field='supportDuty'" + (p.supportDuty ? " checked" : "") + ">応援当番の対象</label>"
-        + "<label class='field full'><span>千春だけの特徴・メモ</span><textarea data-player-field='memo' placeholder='必要なことだけ'>" + esc(p.memo || "") + "</textarea></label>"
+        + "<label class='field full'><span>印刷用の備考</span><textarea data-player-field='printNote' placeholder='早見一覧に載せたい内容だけ'>" + esc(p.printNote || "") + "</textarea></label>"
+        + "<label class='field full'><span>🔐 千春だけの特徴・メモ（印刷・PDFには出ません）</span><textarea data-player-field='memo' placeholder='千春だけが見る内容'>" + esc(p.memo || "") + "</textarea></label>"
         + "</div></div>";
     }
 
@@ -2286,12 +2362,6 @@
     }
 
     function bindDynamicControls(root){
-      root.querySelectorAll("[data-parent-field='vehicleAvailable']").forEach(function(check){
-        check.addEventListener("change",function(){
-          var fields = check.closest(".parent-editor").querySelector("[data-vehicle-fields]");
-          fields.classList.toggle("show",check.checked);
-        });
-      });
       root.querySelectorAll("[data-photo-input]").forEach(function(input){
         input.addEventListener("change",function(){
           if(!input.files || !input.files[0]) return;
@@ -2360,6 +2430,13 @@
       document.getElementById("household-sheet-title").textContent = h ? "家庭を編集" : "家庭を登録";
       document.getElementById("household-id").value = h ? h.id : "";
       document.getElementById("household-name").value = h ? h.name || "" : "";
+      var vehicle = normalizeVehicle(h && h.vehicle ? h.vehicle : blankVehicle());
+      document.getElementById("household-vehicle-available").checked = vehicle.available;
+      document.getElementById("household-vehicle-type").value = vehicle.type;
+      document.getElementById("household-vehicle-capacity").value = vehicle.capacity;
+      document.getElementById("household-vehicle-luggage").value = vehicle.luggage;
+      document.getElementById("household-vehicle-trip-type").value = vehicle.tripType;
+      document.getElementById("household-vehicle-fields").classList.toggle("show",vehicle.available);
       var parents = h && Array.isArray(h.parents) ? h.parents.slice(0,2) : [];
       while(parents.length < 2) parents.push(blankParent(parents.length === 0 ? "父" : "母"));
       parents[0].relation = "父";
@@ -2379,7 +2456,6 @@
       var existing = state.households.find(function(h){return h.id === existingId;});
       var parents = Array.from(document.querySelectorAll(".parent-editor")).map(function(card,index){
         function val(field){var el = card.querySelector("[data-parent-field='" + field + "']");return el ? el.value.trim() : "";}
-        var available = card.querySelector("[data-parent-field='vehicleAvailable']").checked;
         var categoryGroups = Array.from(card.querySelectorAll(".support-entry")).map(function(entry){
           return {
             id:entry.dataset.supportId || id("support"),
@@ -2392,33 +2468,29 @@
           name:val("name"),
           lineName:val("lineName"),
           supportGroups:categoryGroups,
-          photo:card.querySelector("[data-photo-value]").value,
-          vehicle:{
-            available:available,
-            type:val("vehicleType") || "普通自動車",
-            capacity:val("capacity"),
-            luggage:val("luggage") || "中",
-            tripType:val("tripType") || "日帰り・宿泊どちらも"
-          }
+          photo:card.querySelector("[data-photo-value]").value
         };
       });
       var players = Array.from(document.querySelectorAll(".player-editor")).map(function(card){
         function val(field){var el = card.querySelector("[data-player-field='" + field + "']");return el ? el.value.trim() : "";}
+        var selectedCategories = Array.from(card.querySelectorAll("[data-player-category]:checked")).map(function(input){return input.value;});
         return {
           id:card.dataset.playerId || id("player"),
           name:val("name"),
           kana:val("kana"),
           grade:val("grade"),
-          category:val("category"),
+          category:selectedCategories[0] || "",
+          categories:selectedCategories,
           number:val("number"),
           school:val("school"),
           pledge:card.querySelector("[data-player-field='pledge']").checked,
           supportDuty:card.querySelector("[data-player-field='supportDuty']").checked,
+          printNote:val("printNote"),
           memo:val("memo"),
           photo:card.querySelector("[data-photo-value]").value
         };
       }).filter(function(p){
-        return p.name || p.kana || p.grade || p.category || p.number || p.school || p.memo || p.photo;
+        return p.name || p.kana || p.grade || p.categories.length || p.number || p.school || p.printNote || p.memo || p.photo;
       });
       var siblings = Array.from(document.querySelectorAll(".sibling-editor")).map(function(card){
         return {
@@ -2430,6 +2502,13 @@
         id:existingId || id("household"),
         name:document.getElementById("household-name").value.trim(),
         status:existing ? existing.status : "active",
+        vehicle:normalizeVehicle({
+          available:document.getElementById("household-vehicle-available").checked,
+          type:document.getElementById("household-vehicle-type").value,
+          capacity:document.getElementById("household-vehicle-capacity").value.trim(),
+          luggage:document.getElementById("household-vehicle-luggage").value,
+          tripType:document.getElementById("household-vehicle-trip-type").value
+        }),
         parents:parents,
         players:players,
         siblings:siblings,
@@ -2462,6 +2541,9 @@
     });
     document.querySelectorAll("[data-close-sheet]").forEach(function(button){
       button.addEventListener("click",function(){closeSheet(button.dataset.closeSheet);});
+    });
+    document.getElementById("household-vehicle-available").addEventListener("change",function(event){
+      document.getElementById("household-vehicle-fields").classList.toggle("show",event.target.checked);
     });
 
     document.getElementById("add-household").addEventListener("click",function(){openHouseholdEditor(null);});
