@@ -569,7 +569,7 @@
       bottom:0;
       z-index:30;
       display:grid;
-      grid-template-columns:repeat(4,1fr);
+      grid-template-columns:repeat(5,1fr);
       width:min(100%,760px);
       padding:7px 10px calc(7px + env(safe-area-inset-bottom));
       transform:translateX(-50%);
@@ -595,6 +595,100 @@
       line-height:1;
     }
     .nav-btn.active{color:var(--main-dark);background:var(--soft-2)}
+    .trip-card{
+      padding:16px;
+      border:1px solid var(--line);
+      border-radius:21px;
+      background:#fff;
+      box-shadow:0 7px 20px rgba(112,54,78,.06);
+    }
+    .trip-card h3{margin:0;font-size:17px;line-height:1.35}
+    .trip-card + .trip-card{margin-top:11px}
+    .trip-meta{
+      display:flex;
+      flex-wrap:wrap;
+      gap:6px;
+      margin-top:9px;
+    }
+    .trip-player-list{display:grid;gap:10px}
+    .trip-player-row{
+      padding:12px;
+      border:1px solid #ecd2dc;
+      border-radius:17px;
+      background:#fffafd;
+    }
+    .trip-player-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      margin-bottom:9px;
+    }
+    .trip-player-head b{font-size:13px}
+    .trip-player-head small{color:var(--muted);font-size:10px}
+    .trip-player-grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:8px;
+    }
+    .trip-player-grid .field span{font-size:9px}
+    .trip-player-grid select{min-height:42px;padding:8px 9px;font-size:11px}
+    .trip-picker{
+      display:grid;
+      grid-template-columns:minmax(0,1fr) auto;
+      gap:8px;
+      margin:10px 0 0;
+    }
+    .trip-picker button{white-space:nowrap}
+    .trip-empty{
+      padding:16px;
+      border:1px dashed #dfb9c8;
+      border-radius:16px;
+      color:var(--muted);
+      background:#fffafd;
+      font-size:11px;
+      line-height:1.6;
+      text-align:center;
+    }
+    .trip-print-paper{
+      color:#191919;
+      background:#fff;
+      font-family:"Hiragino Sans","Yu Gothic",sans-serif;
+    }
+    .trip-print-banner{
+      padding:14px 16px;
+      border:2px solid #222;
+      background:#ffe56f;
+      text-align:center;
+    }
+    .trip-print-banner h1{margin:0;font-size:22px;line-height:1.25}
+    .trip-print-banner p{margin:5px 0 0;font-size:11px;font-weight:800}
+    .trip-info-table,.trip-answer-table{
+      width:100%;
+      margin-top:9px;
+      border-collapse:collapse;
+      table-layout:fixed;
+      font-size:11px;
+    }
+    .trip-info-table th,.trip-info-table td,.trip-answer-table th,.trip-answer-table td{
+      padding:6px 7px;
+      border:1px solid #333;
+      vertical-align:middle;
+      overflow-wrap:anywhere;
+    }
+    .trip-info-table th{width:14%;background:#fff4b7;text-align:center}
+    .trip-answer-table th{background:#fff4b7;text-align:center}
+    .trip-answer-table td.center{text-align:center}
+    .trip-print-note{
+      min-height:42px;
+      margin-top:9px;
+      padding:8px;
+      border:1px solid #333;
+      font-size:10px;
+      line-height:1.5;
+      white-space:pre-wrap;
+    }
+    .trip-print-foot{margin:5px 0 0;font-size:9px;text-align:right}
     .sheet{
       position:fixed;
       inset:0;
@@ -879,12 +973,14 @@
     @media print{
       body{background:#fff}
       body > *{display:none!important}
-      #roster-sheet{
+      body.print-roster #roster-sheet,
+      body.print-trip #trip-print-sheet{
         position:static!important;
         display:block!important;
         background:#fff!important;
       }
-      #roster-sheet .sheet-panel{
+      body.print-roster #roster-sheet .sheet-panel,
+      body.print-trip #trip-print-sheet .sheet-panel{
         position:static!important;
         overflow:visible!important;
         background:#fff!important;
@@ -919,6 +1015,37 @@
       #roster-sheet .roster-table th{font-size:6.2pt;background:#f1f1f1!important}
       #roster-sheet .roster-table thead{display:table-header-group}
       #roster-sheet .roster-table tr{break-inside:avoid}
+      #trip-print-sheet .sheet-head,#trip-print-sheet .roster-actions{display:none!important}
+      #trip-print-sheet .sheet-body{
+        width:100%!important;
+        max-width:none!important;
+        padding:0!important;
+      }
+      #trip-print-sheet .trip-print-banner{
+        padding:3mm 4mm;
+        background:#ffe56f!important;
+        -webkit-print-color-adjust:exact;
+        print-color-adjust:exact;
+      }
+      #trip-print-sheet .trip-print-banner h1{font-size:16pt}
+      #trip-print-sheet .trip-print-banner p{font-size:7.5pt}
+      #trip-print-sheet .trip-info-table,#trip-print-sheet .trip-answer-table{
+        margin-top:2mm;
+        font-size:7pt;
+        line-height:1.2;
+      }
+      #trip-print-sheet .trip-info-table th,#trip-print-sheet .trip-info-table td,
+      #trip-print-sheet .trip-answer-table th,#trip-print-sheet .trip-answer-table td{
+        padding:1.5mm 1.7mm;
+      }
+      #trip-print-sheet th{
+        background:#fff4b7!important;
+        -webkit-print-color-adjust:exact;
+        print-color-adjust:exact;
+      }
+      #trip-print-sheet tr{break-inside:avoid}
+      #trip-print-sheet .trip-print-note{min-height:10mm;margin-top:2mm;padding:2mm;font-size:7pt}
+      #trip-print-sheet .trip-print-foot{font-size:6.5pt}
     }
   </style>
 </head>
@@ -963,8 +1090,7 @@
               <strong>担当一覧</strong>
               <span>誰が何の担当かすぐ確認</span>
             </button>
-            <button class="module future" type="button" data-future="遠征問診票">
-              <span class="soon">NEXT</span>
+            <button class="module" type="button" data-go="trips">
               <span class="module-icon">📝</span>
               <strong>遠征問診票</strong>
               <span>入力・途中保存・PDF共有</span>
@@ -1014,11 +1140,22 @@
         <div class="list" id="role-list" style="margin-top:12px"></div>
       </section>
 
+      <section class="page" id="page-trips" data-page="trips">
+        <div class="toolbar">
+          <div class="toolbar-title"><h2>遠征問診票</h2><p id="trip-count-label">0件</p></div>
+          <button class="primary" type="button" id="add-trip">＋ 問診票を作る</button>
+        </div>
+        <div class="roster-intro">
+          登録選手をカテゴリーから呼び出し、参加・宿泊・お弁当を選べます。途中保存したあと、編集やA4一覧の作成もできます。
+        </div>
+        <div id="trip-list"></div>
+      </section>
+
       <section class="page" id="page-settings" data-page="settings">
         <div class="toolbar-title"><h2>ちーポケット設定</h2><p>保存状況とアプリ情報</p></div>
         <div class="settings-card">
           <h3>データのバックアップ</h3>
-          <p>家庭・選手・保護者・担当・写真を、ひとつのバックアップファイルに保存できます。</p>
+          <p>家庭・選手・保護者・担当・遠征問診票・写真を、ひとつのバックアップファイルに保存できます。</p>
           <div class="settings-actions">
             <button class="primary" type="button" id="export-backup">⬇ バックアップを保存</button>
             <label class="secondary" for="import-backup">⬆ バックアップを読み込む<input id="import-backup" type="file" accept=".json,application/json"></label>
@@ -1030,7 +1167,7 @@
         </div>
         <div class="settings-card">
           <h3>保存について</h3>
-          <p>家庭・団員・担当の情報は、この端末のSafari内に保存されます。GitHubにアップロードするindex.htmlには、入力した個人情報は入りません。</p>
+          <p>家庭・団員・担当・遠征問診票の情報は、この端末のSafari内に保存されます。GitHubにアップロードするindex.htmlには、入力した個人情報は入りません。</p>
           <div class="settings-list">
             <div class="settings-row"><span>保存データ名</span><b>Chii Pocket専用</b></div>
             <div class="settings-row"><span>最終保存</span><b id="last-saved">未保存</b></div>
@@ -1039,10 +1176,10 @@
         </div>
         <div class="settings-card">
           <h3>このバージョンでできること</h3>
-          <p>家庭・選手・父母・車両情報の登録／編集、カテゴリー別応援班の複数登録、卒団・退団への移動、担当一覧、早見一覧の印刷・PDF作成ができます。</p>
+          <p>家庭・選手・父母・車両情報、カテゴリー別応援班、担当一覧、早見一覧に加え、遠征問診票の途中保存・編集・A4印刷ができます。</p>
           <div class="settings-list">
-            <div class="settings-row"><span>バージョン</span><b>Ver.3 バックアップ版</b></div>
-            <div class="settings-row"><span>次の追加</span><b>遠征問診票</b></div>
+            <div class="settings-row"><span>バージョン</span><b>Ver.4 遠征問診票版</b></div>
+            <div class="settings-row"><span>次の追加</span><b>配車表</b></div>
           </div>
         </div>
       </section>
@@ -1052,6 +1189,7 @@
       <button class="nav-btn active" type="button" data-nav="home"><i>⌂</i>ホーム</button>
       <button class="nav-btn" type="button" data-nav="members"><i>♙</i>家庭・団員</button>
       <button class="nav-btn" type="button" data-nav="roles"><i>☷</i>担当</button>
+      <button class="nav-btn" type="button" data-nav="trips"><i>📝</i>問診票</button>
       <button class="nav-btn" type="button" data-nav="settings"><i>⚙</i>設定</button>
     </nav>
   </div>
@@ -1128,6 +1266,104 @@
     </div>
   </div>
 
+  <div class="sheet" id="trip-sheet" aria-hidden="true">
+    <div class="sheet-panel">
+      <div class="sheet-head">
+        <button class="sheet-close" type="button" data-close-sheet="trip-sheet" aria-label="閉じる">‹</button>
+        <h2 id="trip-sheet-title">遠征問診票を作る</h2>
+      </div>
+      <form id="trip-form">
+        <div class="sheet-body">
+          <input type="hidden" id="trip-id">
+          <section class="form-card">
+            <div class="form-card-head"><div><h3>遠征の基本情報</h3><p class="hint">分かるところから入力して途中保存できます</p></div></div>
+            <div class="grid">
+              <label class="field"><span>日付</span><input id="trip-date" type="date"></label>
+              <label class="field"><span>集合・開始時間</span><input id="trip-time" type="time"></label>
+              <label class="field full"><span>大会・行事名</span><input id="trip-tournament" placeholder="例：○○カップ"></label>
+              <label class="field full"><span>会場</span><input id="trip-venue" placeholder="例：○○運動公園"></label>
+              <label class="field"><span>カテゴリー</span><select id="trip-category"></select></label>
+              <label class="field"><span>応援班</span><select id="trip-support-group"></select></label>
+              <label class="field"><span>日帰り・宿泊</span><select id="trip-type"><option>日帰り</option><option>宿泊</option></select></label>
+              <label class="field"><span>グラウンド</span><select id="trip-surface"><option value="">未定</option><option>芝</option><option>土</option><option>芝・土両方</option></select></label>
+              <label class="field"><span>昼食の準備</span><select id="trip-lunch"><option value="">未定</option><option>各自持参</option><option>手配あり</option><option>不要</option></select></label>
+              <label class="field"><span>保存状態</span><select id="trip-status"><option value="draft">途中保存</option><option value="complete">入力完了</option></select></label>
+            </div>
+          </section>
+
+          <section class="form-card">
+            <div class="form-card-head"><div><h3>宿泊・移動</h3><p class="hint">日帰りの場合は空欄で大丈夫です</p></div></div>
+            <div class="grid">
+              <label class="field full"><span>宿泊先</span><input id="trip-lodging-name" placeholder="施設・ホテル名"></label>
+              <label class="field full"><span>宿泊先住所</span><input id="trip-lodging-address" placeholder="住所"></label>
+              <label class="field"><span>移動手段</span><input id="trip-transport" placeholder="例：バス・自家用車"></label>
+              <label class="field"><span>バス運転手</span><input id="trip-bus-driver" placeholder="会社名・氏名など"></label>
+            </div>
+          </section>
+
+          <section class="form-card">
+            <div class="form-card-head"><div><h3>宿泊先の設備・確認</h3><p class="hint">確認できた内容を残せます</p></div></div>
+            <div class="grid">
+              <label class="field"><span>コインランドリー</span><select id="trip-laundry"><option value="">未確認</option><option>あり</option><option>なし</option></select></label>
+              <label class="field"><span>製氷機</span><select id="trip-ice"><option value="">未確認</option><option>あり</option><option>なし</option></select></label>
+              <label class="field full"><span>ゴミの扱い</span><select id="trip-trash"><option value="">未確認</option><option>持ち帰り</option><option>宿泊先で処分</option><option>その他</option></select></label>
+            </div>
+          </section>
+
+          <section class="form-card">
+            <div class="form-card-head">
+              <div><h3>参加選手</h3><p class="hint">カテゴリーを選び、登録選手を呼び出します</p></div>
+              <button class="small-btn" type="button" id="load-trip-players">登録選手を呼び出す</button>
+            </div>
+            <div class="trip-player-list" id="trip-player-list"></div>
+            <div class="trip-picker">
+              <label class="field"><span>別の選手を追加</span><select id="trip-player-picker"></select></label>
+              <button class="secondary" type="button" id="add-trip-player">＋ 追加</button>
+            </div>
+          </section>
+
+          <section class="form-card">
+            <label class="field"><span>連絡事項・メモ</span><textarea id="trip-notes" placeholder="持ち物、集合場所、注意事項など"></textarea></label>
+          </section>
+        </div>
+        <div class="save-bar" id="trip-save-bar">
+          <div class="save-bar-inner">
+            <button class="ghost" type="button" data-close-sheet="trip-sheet">キャンセル</button>
+            <button class="primary" type="submit">問診票を保存</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="sheet" id="trip-print-sheet" aria-hidden="true">
+    <div class="sheet-panel">
+      <div class="sheet-head">
+        <button class="sheet-close" type="button" data-close-sheet="trip-print-sheet" aria-label="閉じる">‹</button>
+        <h2>遠征問診票 A4一覧</h2>
+      </div>
+      <div class="sheet-body">
+        <div class="roster-actions">
+          <button class="primary" type="button" id="print-trip">印刷・PDFにする</button>
+          <button class="ghost" type="button" data-close-sheet="trip-print-sheet">問診票一覧へ戻る</button>
+        </div>
+        <div class="trip-print-paper" id="trip-print-paper">
+          <div class="trip-print-banner">
+            <h1 id="trip-print-title">遠征問診票</h1>
+            <p id="trip-print-subtitle"></p>
+          </div>
+          <table class="trip-info-table"><tbody id="trip-print-info"></tbody></table>
+          <table class="trip-answer-table">
+            <thead><tr><th style="width:5%">No.</th><th style="width:16%">選手</th><th style="width:9%">学年</th><th style="width:11%">参加</th><th style="width:16%">宿泊する保護者</th><th style="width:14%">1日目昼食</th><th style="width:14%">2日目昼食</th><th>備考</th></tr></thead>
+            <tbody id="trip-print-players"></tbody>
+          </table>
+          <div class="trip-print-note" id="trip-print-notes"></div>
+          <p class="trip-print-foot" id="trip-print-foot"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="sheet" id="roster-sheet" aria-hidden="true">
     <div class="sheet-panel">
       <div class="sheet-head">
@@ -1194,9 +1430,10 @@
     var state = loadState();
     var memberStatus = "active";
     var toastTimer = null;
+    var currentPrintTripId = "";
 
     function blankState(){
-      return {version:1,households:[],roles:[],updatedAt:null};
+      return {version:2,households:[],roles:[],trips:[],updatedAt:null};
     }
 
     function loadState(){
@@ -1207,6 +1444,7 @@
         if(!parsed || typeof parsed !== "object") return blankState();
         parsed.households = Array.isArray(parsed.households) ? parsed.households : [];
         parsed.roles = Array.isArray(parsed.roles) ? parsed.roles : [];
+        parsed.trips = Array.isArray(parsed.trips) ? parsed.trips : [];
         return migrateState(parsed);
       }catch(error){
         return blankState();
@@ -1214,11 +1452,16 @@
     }
 
     function migrateState(data){
+      data.version = 2;
+      data.households = Array.isArray(data.households) ? data.households : [];
+      data.roles = Array.isArray(data.roles) ? data.roles : [];
+      data.trips = Array.isArray(data.trips) ? data.trips : [];
       data.households.forEach(function(household){
         household.players = Array.isArray(household.players) ? household.players : [];
         household.parents = Array.isArray(household.parents) ? household.parents : [];
         household.siblings = Array.isArray(household.siblings) ? household.siblings : [];
         household.players.forEach(function(player){
+          if(!player.id) player.id = id("player");
           if(typeof player.pledge !== "boolean") player.pledge = false;
         });
         var fallbackCategory = household.players.length ? household.players[0].category || "" : "";
@@ -1238,6 +1481,24 @@
             }).filter(function(entry){return entry.category || entry.group;});
           }
         });
+      });
+      data.trips = data.trips.map(function(trip){
+        var normalized = Object.assign(blankTrip(),trip || {});
+        normalized.id = trip && trip.id ? trip.id : id("trip");
+        normalized.players = Array.isArray(trip && trip.players) ? trip.players.map(function(player){
+          return {
+            playerId:player.playerId || player.id || "",
+            name:player.name || "",
+            grade:player.grade || "",
+            category:player.category || normalized.category || "",
+            attendance:player.attendance || "未定",
+            lodging:player.lodging || "なし",
+            lunchDay1:player.lunchDay1 || "未定",
+            lunchDay2:player.lunchDay2 || "未定",
+            note:player.note || ""
+          };
+        }) : [];
+        return normalized;
       });
       return data;
     }
@@ -1360,10 +1621,11 @@
           var playerCount = candidate.households.reduce(function(sum,household){
             return sum + (household.players || []).length;
           },0);
-          var message = "現在の登録内容を、バックアップの内容に置き換えます。\\n\\n"
-            + "家庭：" + candidate.households.length + "件\\n"
-            + "選手：" + playerCount + "名\\n"
-            + "担当：" + candidate.roles.length + "件\\n\\n"
+          var message = "現在の登録内容を、バックアップの内容に置き換えます。\n\n"
+            + "家庭：" + candidate.households.length + "件\n"
+            + "選手：" + playerCount + "名\n"
+            + "担当：" + candidate.roles.length + "件\n"
+            + "遠征問診票：" + candidate.trips.length + "件\n\n"
             + "読み込んでよろしいですか？";
           if(!confirm(message)) return;
           state = candidate;
@@ -1418,6 +1680,7 @@
       window.scrollTo({top:0,behavior:"smooth"});
       if(page === "members") renderMembers();
       if(page === "roles") renderRoles();
+      if(page === "trips") renderTrips();
     }
 
     function renderStats(){
@@ -1440,6 +1703,8 @@
       document.getElementById("grade-filter").innerHTML = optionHtml(grades,"","すべての学年");
       document.getElementById("category-filter").innerHTML = optionHtml(categories,"","すべてのカテゴリー");
       document.getElementById("role-category").innerHTML = optionHtml(categories,"","全体・指定なし");
+      document.getElementById("trip-category").innerHTML = optionHtml(categories,"","カテゴリーを選択");
+      document.getElementById("trip-support-group").innerHTML = optionHtml(supportGroups,"","指定なし");
     }
 
     function parentSupportLabels(parent){
@@ -1646,11 +1911,300 @@
       }).join("");
     }
 
+    function localDateValue(date){
+      var value = date || new Date();
+      function pad(number){return String(number).padStart(2,"0");}
+      return value.getFullYear() + "-" + pad(value.getMonth() + 1) + "-" + pad(value.getDate());
+    }
+
+    function blankTrip(){
+      return {
+        id:id("trip"),
+        date:localDateValue(new Date()),
+        time:"",
+        tournament:"",
+        venue:"",
+        category:"",
+        supportGroup:"",
+        tripType:"日帰り",
+        surface:"",
+        lunch:"",
+        lodgingName:"",
+        lodgingAddress:"",
+        transport:"",
+        busDriver:"",
+        laundry:"",
+        iceMachine:"",
+        trash:"",
+        status:"draft",
+        notes:"",
+        players:[],
+        createdAt:null,
+        updatedAt:null
+      };
+    }
+
+    function activePlayerRecords(){
+      var players = [];
+      state.households.forEach(function(household){
+        if(household.status === "archived") return;
+        (household.players || []).forEach(function(player){
+          if(!player.name) return;
+          players.push({
+            playerId:player.id || "",
+            name:player.name || "",
+            grade:player.grade || "",
+            category:player.category || "",
+            householdName:household.name || ""
+          });
+        });
+      });
+      players.sort(function(a,b){
+        var categoryA = categories.indexOf(a.category);
+        var categoryB = categories.indexOf(b.category);
+        if(categoryA < 0) categoryA = 99;
+        if(categoryB < 0) categoryB = 99;
+        if(categoryA !== categoryB) return categoryA - categoryB;
+        var gradeA = grades.indexOf(a.grade);
+        var gradeB = grades.indexOf(b.grade);
+        if(gradeA < 0) gradeA = 99;
+        if(gradeB < 0) gradeB = 99;
+        if(gradeA !== gradeB) return gradeA - gradeB;
+        return String(a.name).localeCompare(String(b.name),"ja");
+      });
+      return players;
+    }
+
+    function tripPlayerRowHtml(player,index){
+      var p = player || {};
+      return "<div class='trip-player-row' data-trip-player-id='" + esc(p.playerId || "") + "' data-trip-player-category='" + esc(p.category || "") + "'>"
+        + "<div class='trip-player-head'><div><b>" + esc(p.name || "名前未入力") + "</b><small>　" + esc([p.grade,p.category].filter(Boolean).join("・")) + "</small></div><button class='danger-btn' type='button' data-remove-trip-player>外す</button></div>"
+        + "<input type='hidden' data-trip-player-field='name' value='" + esc(p.name || "") + "'><input type='hidden' data-trip-player-field='grade' value='" + esc(p.grade || "") + "'>"
+        + "<div class='trip-player-grid'>"
+        + "<label class='field'><span>参加</span><select data-trip-player-field='attendance'>" + optionHtml(["参加","欠席","未定"],p.attendance || "未定",null) + "</select></label>"
+        + "<label class='field'><span>宿泊する保護者</span><select data-trip-player-field='lodging'>" + optionHtml(["なし","父","母","両親"],p.lodging || "なし",null) + "</select></label>"
+        + "<label class='field'><span>1日目の昼食</span><select data-trip-player-field='lunchDay1'>" + optionHtml(["必要","不要","未定"],p.lunchDay1 || "未定",null) + "</select></label>"
+        + "<label class='field'><span>2日目の昼食</span><select data-trip-player-field='lunchDay2'>" + optionHtml(["必要","不要","未定"],p.lunchDay2 || "未定",null) + "</select></label>"
+        + "<label class='field' style='grid-column:1/-1'><span>備考</span><input data-trip-player-field='note' value='" + esc(p.note || "") + "' placeholder='必要な場合だけ'></label>"
+        + "</div></div>";
+    }
+
+    function collectTripPlayers(){
+      return Array.from(document.querySelectorAll("#trip-player-list .trip-player-row")).map(function(row){
+        function value(field){
+          var element = row.querySelector("[data-trip-player-field='" + field + "']");
+          return element ? element.value.trim() : "";
+        }
+        return {
+          playerId:row.dataset.tripPlayerId || "",
+          name:value("name"),
+          grade:value("grade"),
+          category:row.dataset.tripPlayerCategory || "",
+          attendance:value("attendance") || "未定",
+          lodging:value("lodging") || "なし",
+          lunchDay1:value("lunchDay1") || "未定",
+          lunchDay2:value("lunchDay2") || "未定",
+          note:value("note")
+        };
+      });
+    }
+
+    function renderTripPlayerRows(players){
+      var list = Array.isArray(players) ? players : [];
+      var host = document.getElementById("trip-player-list");
+      host.innerHTML = list.length
+        ? list.map(tripPlayerRowHtml).join("")
+        : "<div class='trip-empty'>まだ選手はいません。カテゴリーを選んで「登録選手を呼び出す」を押してね。</div>";
+      refreshTripPlayerPicker();
+    }
+
+    function refreshTripPlayerPicker(){
+      var picker = document.getElementById("trip-player-picker");
+      var selectedIds = collectTripPlayers().map(function(player){return player.playerId;});
+      var available = activePlayerRecords().filter(function(player){
+        return !player.playerId || selectedIds.indexOf(player.playerId) === -1;
+      });
+      picker.innerHTML = "<option value=''>選手を選択</option>" + available.map(function(player){
+        return "<option value='" + esc(player.playerId) + "'>" + esc(player.category ? player.category + "／" : "") + esc(player.grade ? player.grade + " " : "") + esc(player.name) + "</option>";
+      }).join("");
+    }
+
+    function addPlayerToTrip(record){
+      if(!record) return false;
+      var current = collectTripPlayers();
+      if(record.playerId && current.some(function(player){return player.playerId === record.playerId;})) return false;
+      current.push({
+        playerId:record.playerId || "",
+        name:record.name || "",
+        grade:record.grade || "",
+        category:record.category || "",
+        attendance:"未定",
+        lodging:"なし",
+        lunchDay1:"未定",
+        lunchDay2:"未定",
+        note:""
+      });
+      renderTripPlayerRows(current);
+      return true;
+    }
+
+    function loadRegisteredTripPlayers(){
+      var category = document.getElementById("trip-category").value;
+      if(!category){
+        showToast("先にカテゴリーを選んでね");
+        return;
+      }
+      var matching = activePlayerRecords().filter(function(player){return player.category === category;});
+      if(!matching.length){
+        showToast(category + "の登録選手が見つかりません");
+        return;
+      }
+      var current = collectTripPlayers();
+      var added = 0;
+      matching.forEach(function(record){
+        if(record.playerId && current.some(function(player){return player.playerId === record.playerId;})) return;
+        current.push({
+          playerId:record.playerId || "",
+          name:record.name || "",
+          grade:record.grade || "",
+          category:record.category || "",
+          attendance:"未定",
+          lodging:"なし",
+          lunchDay1:"未定",
+          lunchDay2:"未定",
+          note:""
+        });
+        added += 1;
+      });
+      renderTripPlayerRows(current);
+      showToast(added ? added + "名を呼び出しました" : "選手はすでに追加済みです");
+    }
+
+    function openTripEditor(trip){
+      var value = trip ? Object.assign(blankTrip(),trip) : blankTrip();
+      document.getElementById("trip-sheet-title").textContent = trip ? "遠征問診票を編集" : "遠征問診票を作る";
+      document.getElementById("trip-id").value = trip ? trip.id : "";
+      document.getElementById("trip-date").value = value.date || "";
+      document.getElementById("trip-time").value = value.time || "";
+      document.getElementById("trip-tournament").value = value.tournament || "";
+      document.getElementById("trip-venue").value = value.venue || "";
+      document.getElementById("trip-category").value = value.category || "";
+      document.getElementById("trip-support-group").value = value.supportGroup || "";
+      document.getElementById("trip-type").value = value.tripType || "日帰り";
+      document.getElementById("trip-surface").value = value.surface || "";
+      document.getElementById("trip-lunch").value = value.lunch || "";
+      document.getElementById("trip-status").value = value.status || "draft";
+      document.getElementById("trip-lodging-name").value = value.lodgingName || "";
+      document.getElementById("trip-lodging-address").value = value.lodgingAddress || "";
+      document.getElementById("trip-transport").value = value.transport || "";
+      document.getElementById("trip-bus-driver").value = value.busDriver || "";
+      document.getElementById("trip-laundry").value = value.laundry || "";
+      document.getElementById("trip-ice").value = value.iceMachine || "";
+      document.getElementById("trip-trash").value = value.trash || "";
+      document.getElementById("trip-notes").value = value.notes || "";
+      renderTripPlayerRows(value.players || []);
+      openSheet("trip-sheet");
+      setTimeout(function(){document.getElementById("trip-tournament").focus();},120);
+    }
+
+    function collectTrip(){
+      var tripId = document.getElementById("trip-id").value;
+      var existing = state.trips.find(function(trip){return trip.id === tripId;});
+      return {
+        id:tripId || id("trip"),
+        date:document.getElementById("trip-date").value,
+        time:document.getElementById("trip-time").value,
+        tournament:document.getElementById("trip-tournament").value.trim(),
+        venue:document.getElementById("trip-venue").value.trim(),
+        category:document.getElementById("trip-category").value,
+        supportGroup:document.getElementById("trip-support-group").value,
+        tripType:document.getElementById("trip-type").value,
+        surface:document.getElementById("trip-surface").value,
+        lunch:document.getElementById("trip-lunch").value,
+        status:document.getElementById("trip-status").value,
+        lodgingName:document.getElementById("trip-lodging-name").value.trim(),
+        lodgingAddress:document.getElementById("trip-lodging-address").value.trim(),
+        transport:document.getElementById("trip-transport").value.trim(),
+        busDriver:document.getElementById("trip-bus-driver").value.trim(),
+        laundry:document.getElementById("trip-laundry").value,
+        iceMachine:document.getElementById("trip-ice").value,
+        trash:document.getElementById("trip-trash").value,
+        notes:document.getElementById("trip-notes").value.trim(),
+        players:collectTripPlayers(),
+        createdAt:existing ? existing.createdAt : new Date().toISOString(),
+        updatedAt:new Date().toISOString()
+      };
+    }
+
+    function formatTripDate(date,time){
+      var result = date || "日付未定";
+      if(date){
+        var parts = date.split("-");
+        if(parts.length === 3) result = Number(parts[1]) + "月" + Number(parts[2]) + "日";
+      }
+      return result + (time ? " " + time : "");
+    }
+
+    function renderTrips(){
+      var trips = (state.trips || []).slice().sort(function(a,b){
+        return String(b.date || "").localeCompare(String(a.date || "")) || String(b.updatedAt || "").localeCompare(String(a.updatedAt || ""));
+      });
+      document.getElementById("trip-count-label").textContent = trips.length + "件";
+      var host = document.getElementById("trip-list");
+      if(!trips.length){
+        host.innerHTML = "<div class='empty'><div class='empty-icon'>📝</div><h3>遠征問診票はまだありません</h3><p>大会や遠征ごとに作って、途中保存できます。</p><button class='primary' type='button' data-empty-add='trip'>最初の問診票を作る</button></div>";
+        return;
+      }
+      host.innerHTML = trips.map(function(trip){
+        var participation = (trip.players || []).filter(function(player){return player.attendance === "参加";}).length;
+        var undecided = (trip.players || []).filter(function(player){return player.attendance === "未定";}).length;
+        var statusClass = trip.status === "complete" ? "green" : "gray";
+        var statusLabel = trip.status === "complete" ? "入力完了" : "途中保存";
+        return "<article class='trip-card'><div class='card-top'><div><h3>" + esc(trip.tournament || "大会・行事名未入力") + "</h3><div class='card-sub'>" + esc(formatTripDate(trip.date,trip.time)) + (trip.venue ? "／" + esc(trip.venue) : "") + "</div></div><span class='badge " + statusClass + "'>" + statusLabel + "</span></div>"
+          + "<div class='trip-meta'><span class='chip'>" + esc(trip.category || "カテゴリー未設定") + "</span><span class='chip'>" + esc(trip.tripType || "未設定") + "</span>" + (trip.supportGroup ? "<span class='chip'>応援" + esc(trip.supportGroup) + "</span>" : "") + "<span class='chip'>選手" + (trip.players || []).length + "名</span><span class='chip'>参加" + participation + "名" + (undecided ? "・未定" + undecided + "名" : "") + "</span></div>"
+          + "<div class='actions'><button class='small-btn' type='button' data-trip-edit='" + esc(trip.id) + "'>編集</button><button class='small-btn' type='button' data-trip-preview='" + esc(trip.id) + "'>A4一覧</button><button class='danger-btn' type='button' data-trip-delete='" + esc(trip.id) + "'>削除</button></div></article>";
+      }).join("");
+    }
+
+    function printInfoRow(label,value,label2,value2){
+      return "<tr><th>" + esc(label) + "</th><td>" + esc(value || "―") + "</td><th>" + esc(label2) + "</th><td>" + esc(value2 || "―") + "</td></tr>";
+    }
+
+    function renderTripPrint(trip){
+      currentPrintTripId = trip.id;
+      document.getElementById("trip-print-title").textContent = trip.tournament || "遠征問診票";
+      document.getElementById("trip-print-subtitle").textContent = [formatTripDate(trip.date,trip.time),trip.category,trip.venue].filter(Boolean).join("　／　");
+      document.getElementById("trip-print-info").innerHTML = ""
+        + printInfoRow("日程",formatTripDate(trip.date,trip.time),"カテゴリー",trip.category)
+        + printInfoRow("会場",trip.venue,"応援班",trip.supportGroup)
+        + printInfoRow("遠征形態",trip.tripType,"グラウンド",trip.surface)
+        + printInfoRow("昼食",trip.lunch,"移動手段",trip.transport)
+        + printInfoRow("宿泊先",trip.lodgingName,"バス運転手",trip.busDriver)
+        + printInfoRow("宿泊先住所",trip.lodgingAddress,"設備",[trip.laundry ? "ランドリー" + trip.laundry : "",trip.iceMachine ? "製氷機" + trip.iceMachine : "",trip.trash ? "ゴミ：" + trip.trash : ""].filter(Boolean).join("／"));
+      var playerHost = document.getElementById("trip-print-players");
+      if(!(trip.players || []).length){
+        playerHost.innerHTML = "<tr><td colspan='8' class='center' style='padding:18px'>選手はまだ登録されていません。</td></tr>";
+      }else{
+        playerHost.innerHTML = trip.players.map(function(player,index){
+          return "<tr><td class='center'>" + (index + 1) + "</td><td>" + esc(player.name) + "</td><td class='center'>" + esc(player.grade) + "</td><td class='center'>" + esc(player.attendance) + "</td><td class='center'>" + esc(player.lodging) + "</td><td class='center'>" + esc(player.lunchDay1) + "</td><td class='center'>" + esc(player.lunchDay2) + "</td><td>" + esc(player.note || "") + "</td></tr>";
+        }).join("");
+      }
+      document.getElementById("trip-print-notes").textContent = "連絡事項・メモ：\n" + (trip.notes || "");
+      document.getElementById("trip-print-foot").textContent = "Chii Pocket／作成：" + formatSaved(trip.updatedAt || state.updatedAt);
+    }
+
+    function openTripPrint(trip){
+      if(!trip) return;
+      renderTripPrint(trip);
+      openSheet("trip-print-sheet");
+    }
+
     function renderAll(){
       renderStats();
       renderMembers();
       renderRoles();
       renderRoster();
+      renderTrips();
     }
 
     function blankParent(relation){
@@ -1782,7 +2336,9 @@
       sheet.classList.add("open");
       sheet.setAttribute("aria-hidden","false");
       document.body.style.overflow = "hidden";
-      var saveBarId = sheetId === "household-sheet" ? "household-save-bar" : (sheetId === "role-sheet" ? "role-save-bar" : "");
+      var saveBarId = sheetId === "household-sheet"
+        ? "household-save-bar"
+        : (sheetId === "role-sheet" ? "role-save-bar" : (sheetId === "trip-sheet" ? "trip-save-bar" : ""));
       if(saveBarId) document.getElementById(saveBarId).classList.add("show");
     }
 
@@ -1791,8 +2347,12 @@
       sheet.classList.remove("open");
       sheet.setAttribute("aria-hidden","true");
       document.body.style.overflow = "";
-      var saveBarId = sheetId === "household-sheet" ? "household-save-bar" : (sheetId === "role-sheet" ? "role-save-bar" : "");
+      var saveBarId = sheetId === "household-sheet"
+        ? "household-save-bar"
+        : (sheetId === "role-sheet" ? "role-save-bar" : (sheetId === "trip-sheet" ? "trip-save-bar" : ""));
       if(saveBarId) document.getElementById(saveBarId).classList.remove("show");
+      if(sheetId === "trip-print-sheet") document.body.classList.remove("print-trip");
+      if(sheetId === "roster-sheet") document.body.classList.remove("print-roster");
     }
 
     function openHouseholdEditor(household){
@@ -1906,6 +2466,7 @@
 
     document.getElementById("add-household").addEventListener("click",function(){openHouseholdEditor(null);});
     document.getElementById("add-role").addEventListener("click",function(){openRoleEditor(null);});
+    document.getElementById("add-trip").addEventListener("click",function(){openTripEditor(null);});
     document.getElementById("open-roster").addEventListener("click",function(){
       renderRoster();
       openSheet("roster-sheet");
@@ -1916,6 +2477,15 @@
     });
     document.getElementById("print-roster").addEventListener("click",function(){
       renderRoster();
+      document.body.classList.remove("print-trip");
+      document.body.classList.add("print-roster");
+      window.print();
+    });
+    document.getElementById("print-trip").addEventListener("click",function(){
+      var trip = state.trips.find(function(item){return item.id === currentPrintTripId;});
+      if(trip) renderTripPrint(trip);
+      document.body.classList.remove("print-roster");
+      document.body.classList.add("print-trip");
       window.print();
     });
     document.getElementById("export-backup").addEventListener("click",exportBackup);
@@ -1926,6 +2496,25 @@
     document.getElementById("grade-filter").addEventListener("change",renderMembers);
     document.getElementById("category-filter").addEventListener("change",renderMembers);
     document.getElementById("role-search").addEventListener("input",renderRoles);
+    document.getElementById("load-trip-players").addEventListener("click",loadRegisteredTripPlayers);
+    document.getElementById("add-trip-player").addEventListener("click",function(){
+      var playerId = document.getElementById("trip-player-picker").value;
+      if(!playerId){
+        showToast("追加する選手を選んでね");
+        return;
+      }
+      var record = activePlayerRecords().find(function(player){return player.playerId === playerId;});
+      if(addPlayerToTrip(record)) showToast("選手を追加しました");
+    });
+    document.getElementById("trip-player-list").addEventListener("click",function(event){
+      var remove = event.target.closest("[data-remove-trip-player]");
+      if(!remove) return;
+      var current = collectTripPlayers();
+      var row = remove.closest(".trip-player-row");
+      var index = Array.from(document.querySelectorAll("#trip-player-list .trip-player-row")).indexOf(row);
+      if(index >= 0) current.splice(index,1);
+      renderTripPlayerRows(current);
+    });
 
     document.querySelectorAll("[data-member-status]").forEach(function(button){
       button.addEventListener("click",function(){
@@ -2026,11 +2615,26 @@
       saveState(index >= 0 ? "担当を更新しました" : "担当を登録しました");
     });
 
+    document.getElementById("trip-form").addEventListener("submit",function(event){
+      event.preventDefault();
+      var trip = collectTrip();
+      if(!trip.tournament && !trip.venue && !trip.category){
+        showToast("大会名・会場・カテゴリーのどれかを入力してね");
+        return;
+      }
+      var index = state.trips.findIndex(function(item){return item.id === trip.id;});
+      if(index >= 0) state.trips[index] = trip;
+      else state.trips.push(trip);
+      closeSheet("trip-sheet");
+      saveState(index >= 0 ? "遠征問診票を更新しました" : "遠征問診票を保存しました");
+    });
+
     document.addEventListener("click",function(event){
       var emptyAdd = event.target.closest("[data-empty-add]");
       if(emptyAdd){
         if(emptyAdd.dataset.emptyAdd === "household") openHouseholdEditor(null);
-        else openRoleEditor(null);
+        else if(emptyAdd.dataset.emptyAdd === "role") openRoleEditor(null);
+        else if(emptyAdd.dataset.emptyAdd === "trip") openTripEditor(null);
       }
       var editHousehold = event.target.closest("[data-household-edit]");
       if(editHousehold){
@@ -2074,6 +2678,28 @@
           saveState("担当を削除しました");
         }
       }
+      var editTrip = event.target.closest("[data-trip-edit]");
+      if(editTrip){
+        var tripToEdit = state.trips.find(function(trip){return trip.id === editTrip.dataset.tripEdit;});
+        if(tripToEdit) openTripEditor(tripToEdit);
+      }
+      var previewTrip = event.target.closest("[data-trip-preview]");
+      if(previewTrip){
+        var tripToPreview = state.trips.find(function(trip){return trip.id === previewTrip.dataset.tripPreview;});
+        if(tripToPreview) openTripPrint(tripToPreview);
+      }
+      var deleteTrip = event.target.closest("[data-trip-delete]");
+      if(deleteTrip){
+        var tripToDelete = state.trips.find(function(trip){return trip.id === deleteTrip.dataset.tripDelete;});
+        if(tripToDelete && confirm((tripToDelete.tournament || "この遠征問診票") + "を削除しますか？")){
+          state.trips = state.trips.filter(function(trip){return trip.id !== tripToDelete.id;});
+          saveState("遠征問診票を削除しました");
+        }
+      }
+    });
+
+    window.addEventListener("afterprint",function(){
+      document.body.classList.remove("print-roster","print-trip");
     });
 
     window.addEventListener("storage",function(event){
