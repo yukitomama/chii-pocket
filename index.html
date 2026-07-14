@@ -537,6 +537,32 @@
       font-size:12px;
     }
     .settings-row b{font-size:13px}
+    .settings-actions{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:9px;
+      margin-top:14px;
+    }
+    .settings-actions .primary,.settings-actions .secondary{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-height:50px;
+      text-align:center;
+      font-size:12px;
+      line-height:1.35;
+    }
+    .settings-actions input{display:none}
+    .backup-caution{
+      margin-top:11px;
+      padding:10px 11px;
+      border:1px solid #f0dec0;
+      border-radius:13px;
+      color:#72561f;
+      background:#fff9e9;
+      font-size:10px;
+      line-height:1.55;
+    }
     .bottom-nav{
       position:fixed;
       left:50%;
@@ -991,6 +1017,18 @@
       <section class="page" id="page-settings" data-page="settings">
         <div class="toolbar-title"><h2>ちーポケット設定</h2><p>保存状況とアプリ情報</p></div>
         <div class="settings-card">
+          <h3>データのバックアップ</h3>
+          <p>家庭・選手・保護者・担当・写真を、ひとつのバックアップファイルに保存できます。</p>
+          <div class="settings-actions">
+            <button class="primary" type="button" id="export-backup">⬇ バックアップを保存</button>
+            <label class="secondary" for="import-backup">⬆ バックアップを読み込む<input id="import-backup" type="file" accept=".json,application/json"></label>
+          </div>
+          <div class="settings-list">
+            <div class="settings-row"><span>最終バックアップ</span><b id="backup-status">未作成</b></div>
+          </div>
+          <div class="backup-caution">バックアップファイルには個人情報が入ります。GitHubにはアップロードせず、千春のiPhone内で保管してください。</div>
+        </div>
+        <div class="settings-card">
           <h3>保存について</h3>
           <p>家庭・団員・担当の情報は、この端末のSafari内に保存されます。GitHubにアップロードするindex.htmlには、入力した個人情報は入りません。</p>
           <div class="settings-list">
@@ -1003,7 +1041,7 @@
           <h3>このバージョンでできること</h3>
           <p>家庭・選手・父母・車両情報の登録／編集、カテゴリー別応援班の複数登録、卒団・退団への移動、担当一覧、早見一覧の印刷・PDF作成ができます。</p>
           <div class="settings-list">
-            <div class="settings-row"><span>バージョン</span><b>Ver.2 早見一覧版</b></div>
+            <div class="settings-row"><span>バージョン</span><b>Ver.3 バックアップ版</b></div>
             <div class="settings-row"><span>次の追加</span><b>遠征問診票</b></div>
           </div>
         </div>
@@ -1149,6 +1187,7 @@
     "use strict";
 
     var STORAGE_KEY = "chiiPocket.v1";
+    var BACKUP_DATE_KEY = "chiiPocket.lastBackupAt";
     var grades = ["6年","5年","4年","3年","2年","1年","年長","年中","その他"];
     var categories = ["U12","U11","U10","U9","U8","シゴロ","全学年","その他"];
     var supportGroups = ["A班","B班","C班","D班"];
@@ -1243,6 +1282,106 @@
       }
     }
 
+    function backupFilename(date){
+      function pad(value){return String(value).padStart(2,"0");}
+      return "chii-pocket-backup-"
+        + date.getFullYear()
+        + pad(date.getMonth() + 1)
+        + pad(date.getDate())
+        + "-"
+        + pad(date.getHours())
+        + pad(date.getMinutes())
+        + ".json";
+    }
+
+    function markBackup(dateIso){
+      localStorage.setItem(BACKUP_DATE_KEY,dateIso);
+      renderStats();
+    }
+
+    function downloadBackup(blob,fileName){
+      var url = URL.createObjectURL(blob);
+      var link = document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(function(){URL.revokeObjectURL(url);},1500);
+    }
+
+    async function exportBackup(){
+      var now = new Date();
+      var exportedAt = now.toISOString();
+      var payload = {
+        app:"Chii Pocket",
+        formatVersion:1,
+        exportedAt:exportedAt,
+        data:state
+      };
+      var json = JSON.stringify(payload,null,2);
+      var fileName = backupFilename(now);
+      var blob = new Blob([json],{type:"application/json"});
+      var backupFile = typeof File === "function"
+        ? new File([blob],fileName,{type:"application/json"})
+        : null;
+      try{
+        if(backupFile && navigator.share && navigator.canShare && navigator.canShare({files:[backupFile]})){
+          showToast("共有画面で「ファイルに保存」を選んでね");
+          await navigator.share({title:"Chii Pocket バックアップ",files:[backupFile]});
+        }else{
+          downloadBackup(blob,fileName);
+        }
+        markBackup(exportedAt);
+        showToast("バックアップを作成しました");
+      }catch(error){
+        if(error && error.name === "AbortError"){
+          showToast("バックアップをキャンセルしました");
+        }else{
+          downloadBackup(blob,fileName);
+          markBackup(exportedAt);
+          showToast("バックアップファイルを作成しました");
+        }
+      }
+    }
+
+    function importBackup(file,input){
+      if(!file) return;
+      var reader = new FileReader();
+      reader.onload = function(){
+        try{
+          var parsed = JSON.parse(String(reader.result || ""));
+          if(parsed.app && parsed.app !== "Chii Pocket") throw new Error("別のアプリのファイルです");
+          var candidate = parsed.data || parsed;
+          if(!candidate || !Array.isArray(candidate.households) || !Array.isArray(candidate.roles)){
+            throw new Error("バックアップ形式が違います");
+          }
+          candidate = migrateState(candidate);
+          var playerCount = candidate.households.reduce(function(sum,household){
+            return sum + (household.players || []).length;
+          },0);
+          var message = "現在の登録内容を、バックアップの内容に置き換えます。\\n\\n"
+            + "家庭：" + candidate.households.length + "件\\n"
+            + "選手：" + playerCount + "名\\n"
+            + "担当：" + candidate.roles.length + "件\\n\\n"
+            + "読み込んでよろしいですか？";
+          if(!confirm(message)) return;
+          state = candidate;
+          if(parsed.exportedAt) localStorage.setItem(BACKUP_DATE_KEY,parsed.exportedAt);
+          saveState("バックアップを読み込みました");
+        }catch(error){
+          showToast("このファイルは読み込めませんでした");
+        }finally{
+          input.value = "";
+        }
+      };
+      reader.onerror = function(){
+        input.value = "";
+        showToast("バックアップを読み込めませんでした");
+      };
+      reader.readAsText(file);
+    }
+
     function optionHtml(items,selected,blankLabel){
       var html = blankLabel == null ? "" : "<option value=''>" + esc(blankLabel) + "</option>";
       items.forEach(function(item){
@@ -1293,6 +1432,7 @@
       document.getElementById("stat-parents").textContent = parents;
       document.getElementById("stat-roles").textContent = activeRoles;
       document.getElementById("last-saved").textContent = formatSaved(state.updatedAt);
+      document.getElementById("backup-status").textContent = formatSaved(localStorage.getItem(BACKUP_DATE_KEY));
       document.getElementById("archived-count").textContent = state.households.filter(function(h){return h.status === "archived";}).length + "家庭";
     }
 
@@ -1777,6 +1917,10 @@
     document.getElementById("print-roster").addEventListener("click",function(){
       renderRoster();
       window.print();
+    });
+    document.getElementById("export-backup").addEventListener("click",exportBackup);
+    document.getElementById("import-backup").addEventListener("change",function(event){
+      importBackup(event.target.files && event.target.files[0],event.target);
     });
     document.getElementById("member-search").addEventListener("input",renderMembers);
     document.getElementById("grade-filter").addEventListener("change",renderMembers);
