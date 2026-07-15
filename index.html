@@ -512,6 +512,67 @@
       font-size:11px;
       line-height:1.55;
     }
+    .todo-private-note{
+      display:flex;
+      gap:9px;
+      margin:0 0 13px;
+      padding:12px 13px;
+      border:1px solid #d8cde9;
+      border-radius:17px;
+      color:#655474;
+      background:#faf7ff;
+      font-size:11px;
+      line-height:1.55;
+    }
+    .todo-card{
+      padding:16px;
+      border:1px solid var(--line);
+      border-radius:21px;
+      background:#fff;
+      box-shadow:0 7px 20px rgba(112,54,78,.06);
+    }
+    .todo-card-main{
+      display:grid;
+      grid-template-columns:auto minmax(0,1fr);
+      gap:11px;
+      align-items:start;
+    }
+    .todo-toggle{
+      display:grid;
+      place-items:center;
+      width:36px;
+      height:36px;
+      padding:0;
+      border:2px solid #e8adc4;
+      border-radius:50%;
+      color:transparent;
+      background:#fff8fb;
+      font-size:18px;
+      font-weight:900;
+      cursor:pointer;
+    }
+    .todo-card.done .todo-toggle{
+      border-color:var(--green);
+      color:#fff;
+      background:var(--green);
+    }
+    .todo-text{
+      margin:2px 0 0;
+      font-size:14px;
+      font-weight:750;
+      line-height:1.65;
+      overflow-wrap:anywhere;
+    }
+    .todo-card.done .todo-text{
+      color:#897b82;
+      text-decoration:line-through;
+      text-decoration-thickness:1px;
+    }
+    .todo-meta{
+      margin-top:7px;
+      color:var(--muted);
+      font-size:10px;
+    }
     .settings-card{
       margin-top:13px;
       padding:17px;
@@ -569,7 +630,7 @@
       bottom:0;
       z-index:30;
       display:grid;
-      grid-template-columns:repeat(5,1fr);
+      grid-template-columns:repeat(6,1fr);
       width:min(100%,760px);
       padding:7px 10px calc(7px + env(safe-area-inset-bottom));
       transform:translateX(-50%);
@@ -990,6 +1051,7 @@
     }
     @page{size:A4 landscape;margin:7mm}
     @media print{
+      .private-only{display:none!important}
       body{background:#fff}
       body > *{display:none!important}
       body.print-roster #roster-sheet,
@@ -1109,6 +1171,11 @@
               <strong>担当一覧</strong>
               <span>誰が何の担当かすぐ確認</span>
             </button>
+            <button class="module" type="button" data-go="todos">
+              <span class="module-icon">✓</span>
+              <strong>千春メモ</strong>
+              <span id="home-todo-count">これからやることを一覧で管理</span>
+            </button>
             <button class="module" type="button" data-go="trips">
               <span class="module-icon">📝</span>
               <strong>遠征問診票</strong>
@@ -1170,11 +1237,24 @@
         <div id="trip-list"></div>
       </section>
 
+      <section class="page private-only" id="page-todos" data-page="todos">
+        <div class="toolbar">
+          <div class="toolbar-title"><h2>千春メモ</h2><p id="todo-count-label">やること 0件・完了 0件</p></div>
+          <button class="primary" type="button" id="add-todo">＋ メモを追加</button>
+        </div>
+        <div class="todo-private-note"><span aria-hidden="true">🔐</span><div><b>千春だけの個人用</b><br>ここに書いた内容は、早見一覧・問診票・印刷・PDFには表示しません。</div></div>
+        <div class="segmented" aria-label="千春メモの状態">
+          <button type="button" class="active" data-todo-status="active">これからやること</button>
+          <button type="button" data-todo-status="done">完了したこと</button>
+        </div>
+        <div class="list" id="todo-list" style="margin-top:12px"></div>
+      </section>
+
       <section class="page" id="page-settings" data-page="settings">
         <div class="toolbar-title"><h2>ちーポケット設定</h2><p>保存状況とアプリ情報</p></div>
         <div class="settings-card">
           <h3>データのバックアップ</h3>
-          <p>家庭・選手・保護者・担当・遠征問診票・写真を、ひとつのバックアップファイルに保存できます。</p>
+          <p>家庭・選手・保護者・担当・遠征問診票・千春メモ・写真を、ひとつのバックアップファイルに保存できます。</p>
           <div class="settings-actions">
             <button class="primary" type="button" id="export-backup">⬇ バックアップを保存</button>
             <label class="secondary" for="import-backup">⬆ バックアップを読み込む<input id="import-backup" type="file" accept=".json,application/json"></label>
@@ -1186,7 +1266,7 @@
         </div>
         <div class="settings-card">
           <h3>保存について</h3>
-          <p>家庭・団員・担当・遠征問診票の情報は、この端末のSafari内に保存されます。GitHubにアップロードするindex.htmlには、入力した個人情報は入りません。</p>
+          <p>家庭・団員・担当・遠征問診票・千春メモの情報は、この端末のSafari内に保存されます。GitHubにアップロードするindex.htmlには、入力した個人情報は入りません。</p>
           <div class="settings-list">
             <div class="settings-row"><span>保存データ名</span><b>Chii Pocket専用</b></div>
             <div class="settings-row"><span>最終保存</span><b id="last-saved">未保存</b></div>
@@ -1195,9 +1275,9 @@
         </div>
         <div class="settings-card">
           <h3>このバージョンでできること</h3>
-          <p>選手の複数カテゴリー、家庭ごとの応援車両、カテゴリー別応援班、担当一覧、早見一覧、遠征問診票の途中保存・編集・A4印刷ができます。千春だけのメモは共有用の印刷・PDFには表示しません。</p>
+          <p>選手の複数カテゴリー、家庭ごとの応援車両、カテゴリー別応援班、担当一覧、早見一覧、遠征問診票、千春メモの一覧・完了管理ができます。千春だけのメモは共有用の印刷・PDFには表示しません。</p>
           <div class="settings-list">
-            <div class="settings-row"><span>バージョン</span><b>Ver.5 データ整理版</b></div>
+            <div class="settings-row"><span>バージョン</span><b>Ver.6 千春メモ版</b></div>
             <div class="settings-row"><span>次の追加</span><b>配車表</b></div>
           </div>
         </div>
@@ -1209,8 +1289,33 @@
       <button class="nav-btn" type="button" data-nav="members"><i>♙</i>家庭・団員</button>
       <button class="nav-btn" type="button" data-nav="roles"><i>☷</i>担当</button>
       <button class="nav-btn" type="button" data-nav="trips"><i>📝</i>問診票</button>
+      <button class="nav-btn" type="button" data-nav="todos"><i>✓</i>メモ</button>
       <button class="nav-btn" type="button" data-nav="settings"><i>⚙</i>設定</button>
     </nav>
+  </div>
+
+  <div class="sheet private-only" id="todo-sheet" aria-hidden="true">
+    <div class="sheet-panel">
+      <div class="sheet-head">
+        <button class="sheet-close" type="button" data-close-sheet="todo-sheet" aria-label="閉じる">‹</button>
+        <h2 id="todo-sheet-title">千春メモを追加</h2>
+      </div>
+      <form id="todo-form">
+        <div class="sheet-body">
+          <input type="hidden" id="todo-id">
+          <section class="form-card">
+            <label class="field"><span>これからやること</span><textarea id="todo-text" required placeholder="例：8月号の中郷FCだよりを作る"></textarea></label>
+            <div class="todo-private-note" style="margin:12px 0 0"><span aria-hidden="true">🔐</span><div>この内容は千春メモの一覧だけに表示します。印刷用の備考とは別に保存します。</div></div>
+          </section>
+        </div>
+        <div class="save-bar" id="todo-save-bar">
+          <div class="save-bar-inner">
+            <button class="ghost" type="button" data-close-sheet="todo-sheet">キャンセル</button>
+            <button class="primary" type="submit">このメモを保存</button>
+          </div>
+        </div>
+      </form>
+    </div>
   </div>
 
   <div class="sheet" id="household-sheet" aria-hidden="true">
@@ -1461,11 +1566,12 @@
     var supportGroups = ["A班","B班","C班","D班"];
     var state = loadState();
     var memberStatus = "active";
+    var todoStatus = "active";
     var toastTimer = null;
     var currentPrintTripId = "";
 
     function blankState(){
-      return {version:3,households:[],roles:[],trips:[],updatedAt:null};
+      return {version:4,households:[],roles:[],trips:[],todos:[],updatedAt:null};
     }
 
     function playerCategoryList(player){
@@ -1509,6 +1615,7 @@
         parsed.households = Array.isArray(parsed.households) ? parsed.households : [];
         parsed.roles = Array.isArray(parsed.roles) ? parsed.roles : [];
         parsed.trips = Array.isArray(parsed.trips) ? parsed.trips : [];
+        parsed.todos = Array.isArray(parsed.todos) ? parsed.todos : [];
         var previousVersion = parsed.version;
         var migrated = migrateState(parsed);
         if(previousVersion !== migrated.version){
@@ -1521,10 +1628,21 @@
     }
 
     function migrateState(data){
-      data.version = 3;
+      data.version = 4;
       data.households = Array.isArray(data.households) ? data.households : [];
       data.roles = Array.isArray(data.roles) ? data.roles : [];
       data.trips = Array.isArray(data.trips) ? data.trips : [];
+      data.todos = Array.isArray(data.todos) ? data.todos.map(function(todo){
+        var value = typeof todo === "string" ? {text:todo} : (todo || {});
+        return {
+          id:value.id || id("todo"),
+          text:String(value.text || ""),
+          done:!!value.done,
+          createdAt:value.createdAt || new Date().toISOString(),
+          updatedAt:value.updatedAt || value.createdAt || new Date().toISOString(),
+          completedAt:value.done ? (value.completedAt || value.updatedAt || new Date().toISOString()) : null
+        };
+      }) : [];
       data.households.forEach(function(household){
         household.players = Array.isArray(household.players) ? household.players : [];
         household.parents = Array.isArray(household.parents) ? household.parents : [];
@@ -1653,7 +1771,7 @@
       var exportedAt = now.toISOString();
       var payload = {
         app:"Chii Pocket",
-        formatVersion:2,
+        formatVersion:3,
         exportedAt:exportedAt,
         data:state
       };
@@ -1702,7 +1820,8 @@
             + "家庭：" + candidate.households.length + "件\n"
             + "選手：" + playerCount + "名\n"
             + "担当：" + candidate.roles.length + "件\n"
-            + "遠征問診票：" + candidate.trips.length + "件\n\n"
+            + "遠征問診票：" + candidate.trips.length + "件\n"
+            + "千春メモ：" + candidate.todos.length + "件\n\n"
             + "読み込んでよろしいですか？";
           if(!confirm(message)) return;
           state = candidate;
@@ -1758,6 +1877,7 @@
       if(page === "members") renderMembers();
       if(page === "roles") renderRoles();
       if(page === "trips") renderTrips();
+      if(page === "todos") renderTodos();
     }
 
     function renderStats(){
@@ -1771,6 +1891,8 @@
       document.getElementById("stat-players").textContent = players;
       document.getElementById("stat-parents").textContent = parents;
       document.getElementById("stat-roles").textContent = activeRoles;
+      var pendingTodos = state.todos.filter(function(todo){return !todo.done;}).length;
+      document.getElementById("home-todo-count").textContent = pendingTodos ? "やることが" + pendingTodos + "件あります" : "これからやることを一覧で管理";
       document.getElementById("last-saved").textContent = formatSaved(state.updatedAt);
       document.getElementById("backup-status").textContent = formatSaved(localStorage.getItem(BACKUP_DATE_KEY));
       document.getElementById("archived-count").textContent = state.households.filter(function(h){return h.status === "archived";}).length + "家庭";
@@ -1894,6 +2016,32 @@
       });
       document.getElementById("parent-name-options").innerHTML = Array.from(new Set(parentNames)).sort().map(function(name){
         return "<option value='" + esc(name) + "'></option>";
+      }).join("");
+    }
+
+    function renderTodos(){
+      var todos = Array.isArray(state.todos) ? state.todos : [];
+      var activeCount = todos.filter(function(todo){return !todo.done;}).length;
+      var doneCount = todos.filter(function(todo){return todo.done;}).length;
+      document.getElementById("todo-count-label").textContent = "やること " + activeCount + "件・完了 " + doneCount + "件";
+      var list = todos.filter(function(todo){return todoStatus === "done" ? todo.done : !todo.done;});
+      list.sort(function(a,b){
+        var aDate = a.done ? (a.completedAt || a.updatedAt) : (a.updatedAt || a.createdAt);
+        var bDate = b.done ? (b.completedAt || b.updatedAt) : (b.updatedAt || b.createdAt);
+        return String(bDate || "").localeCompare(String(aDate || ""));
+      });
+      var host = document.getElementById("todo-list");
+      if(!list.length){
+        if(todoStatus === "done"){
+          host.innerHTML = "<div class='empty'><div class='empty-icon'>🌷</div><h3>完了したメモはまだありません</h3><p>終わったメモを「完了」にすると、ここへ残ります。</p></div>";
+        }else{
+          host.innerHTML = "<div class='empty'><div class='empty-icon'>✓</div><h3>やることはまだありません</h3><p>これからやることを、忘れないうちにメモできます。</p><button class='primary' type='button' data-empty-add='todo'>最初のメモを追加</button></div>";
+        }
+        return;
+      }
+      host.innerHTML = list.map(function(todo){
+        var dateLabel = formatSaved(todo.done ? (todo.completedAt || todo.updatedAt) : (todo.updatedAt || todo.createdAt));
+        return "<article class='todo-card" + (todo.done ? " done" : "") + "'><div class='todo-card-main'><button class='todo-toggle' type='button' data-todo-toggle='" + esc(todo.id) + "' aria-label='" + (todo.done ? "やることへ戻す" : "完了にする") + "'>✓</button><div><div class='todo-text'>" + esc(todo.text || "内容なし").replace(/\n/g,"<br>") + "</div><div class='todo-meta'>" + (todo.done ? "完了：" : "更新：") + esc(dateLabel) + "</div></div></div><div class='actions'><button class='small-btn' type='button' data-todo-edit='" + esc(todo.id) + "'>編集</button><button class='danger-btn' type='button' data-todo-delete='" + esc(todo.id) + "'>削除</button></div></article>";
       }).join("");
     }
 
@@ -2282,6 +2430,7 @@
       renderRoles();
       renderRoster();
       renderTrips();
+      renderTodos();
     }
 
     function blankParent(relation){
@@ -2530,6 +2679,14 @@
       setTimeout(function(){document.getElementById("role-title").focus();},120);
     }
 
+    function openTodoEditor(todo){
+      document.getElementById("todo-sheet-title").textContent = todo ? "千春メモを編集" : "千春メモを追加";
+      document.getElementById("todo-id").value = todo ? todo.id : "";
+      document.getElementById("todo-text").value = todo ? todo.text || "" : "";
+      openSheet("todo-sheet");
+      setTimeout(function(){document.getElementById("todo-text").focus();},120);
+    }
+
     document.querySelectorAll("[data-nav]").forEach(function(button){
       button.addEventListener("click",function(){go(button.dataset.nav);});
     });
@@ -2549,6 +2706,7 @@
     document.getElementById("add-household").addEventListener("click",function(){openHouseholdEditor(null);});
     document.getElementById("add-role").addEventListener("click",function(){openRoleEditor(null);});
     document.getElementById("add-trip").addEventListener("click",function(){openTripEditor(null);});
+    document.getElementById("add-todo").addEventListener("click",function(){openTodoEditor(null);});
     document.getElementById("open-roster").addEventListener("click",function(){
       renderRoster();
       openSheet("roster-sheet");
@@ -2603,6 +2761,14 @@
         memberStatus = button.dataset.memberStatus;
         document.querySelectorAll("[data-member-status]").forEach(function(el){el.classList.toggle("active",el === button);});
         renderMembers();
+      });
+    });
+
+    document.querySelectorAll("[data-todo-status]").forEach(function(button){
+      button.addEventListener("click",function(){
+        todoStatus = button.dataset.todoStatus;
+        document.querySelectorAll("[data-todo-status]").forEach(function(el){el.classList.toggle("active",el === button);});
+        renderTodos();
       });
     });
 
@@ -2711,12 +2877,61 @@
       saveState(index >= 0 ? "遠征問診票を更新しました" : "遠征問診票を保存しました");
     });
 
+    document.getElementById("todo-form").addEventListener("submit",function(event){
+      event.preventDefault();
+      var todoId = document.getElementById("todo-id").value;
+      var text = document.getElementById("todo-text").value.trim();
+      if(!text){
+        showToast("やることを入力してね");
+        return;
+      }
+      var existing = state.todos.find(function(todo){return todo.id === todoId;});
+      var now = new Date().toISOString();
+      var todo = {
+        id:todoId || id("todo"),
+        text:text,
+        done:existing ? !!existing.done : false,
+        createdAt:existing ? existing.createdAt : now,
+        updatedAt:now,
+        completedAt:existing ? existing.completedAt || null : null
+      };
+      var index = state.todos.findIndex(function(item){return item.id === todo.id;});
+      if(index >= 0) state.todos[index] = todo;
+      else state.todos.push(todo);
+      closeSheet("todo-sheet");
+      saveState(index >= 0 ? "千春メモを更新しました" : "千春メモを保存しました");
+    });
+
     document.addEventListener("click",function(event){
       var emptyAdd = event.target.closest("[data-empty-add]");
       if(emptyAdd){
         if(emptyAdd.dataset.emptyAdd === "household") openHouseholdEditor(null);
         else if(emptyAdd.dataset.emptyAdd === "role") openRoleEditor(null);
         else if(emptyAdd.dataset.emptyAdd === "trip") openTripEditor(null);
+        else if(emptyAdd.dataset.emptyAdd === "todo") openTodoEditor(null);
+      }
+      var toggleTodo = event.target.closest("[data-todo-toggle]");
+      if(toggleTodo){
+        var todoToToggle = state.todos.find(function(todo){return todo.id === toggleTodo.dataset.todoToggle;});
+        if(todoToToggle){
+          todoToToggle.done = !todoToToggle.done;
+          todoToToggle.updatedAt = new Date().toISOString();
+          todoToToggle.completedAt = todoToToggle.done ? todoToToggle.updatedAt : null;
+          saveState(todoToToggle.done ? "完了にしました" : "やることへ戻しました");
+        }
+      }
+      var editTodo = event.target.closest("[data-todo-edit]");
+      if(editTodo){
+        var todoToEdit = state.todos.find(function(todo){return todo.id === editTodo.dataset.todoEdit;});
+        if(todoToEdit) openTodoEditor(todoToEdit);
+      }
+      var deleteTodo = event.target.closest("[data-todo-delete]");
+      if(deleteTodo){
+        var todoToDelete = state.todos.find(function(todo){return todo.id === deleteTodo.dataset.todoDelete;});
+        if(todoToDelete && confirm("この千春メモを削除しますか？")){
+          state.todos = state.todos.filter(function(todo){return todo.id !== todoToDelete.id;});
+          saveState("千春メモを削除しました");
+        }
       }
       var editHousehold = event.target.closest("[data-household-edit]");
       if(editHousehold){
