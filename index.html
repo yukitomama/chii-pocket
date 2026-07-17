@@ -9,7 +9,8 @@
   <meta http-equiv="Expires" content="0">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <title>Chii Pocket｜千春専用 会長手帳</title>
+  <meta name="robots" content="noindex,nofollow,noarchive,nosnippet">
+  <title>Chii Pocket ♡ 小林千春専用</title>
   <style>
     :root{
       --bg:#fff8fb;
@@ -35,6 +36,8 @@
       margin:0;
       min-height:100vh;
       background:
+        radial-gradient(circle at 13% 12%,rgba(255,255,255,.95) 0 3px,transparent 4px),
+        radial-gradient(circle at 83% 24%,rgba(255,255,255,.9) 0 4px,transparent 5px),
         radial-gradient(circle at 100% 0,rgba(255,209,226,.68),transparent 34%),
         linear-gradient(180deg,#fffafd 0,#fff7fa 58%,#fffafd 100%);
       color:var(--ink);
@@ -73,11 +76,12 @@
       width:46px;
       height:46px;
       flex:0 0 46px;
-      border-radius:15px;
+      border-radius:50% 50% 45% 50%;
       color:#fff;
-      background:linear-gradient(145deg,#f498ba,#df5e91);
+      background:linear-gradient(145deg,#ffafd0,#e54f8a);
       box-shadow:0 8px 18px rgba(223,94,145,.24);
       font-size:23px;
+      font-weight:900;
     }
     .brand-mark:after{
       content:"";
@@ -96,6 +100,7 @@
       font-size:20px;
       line-height:1.12;
       letter-spacing:.02em;
+      color:#b8326a;
     }
     .brand-copy p{
       margin:4px 0 0;
@@ -106,14 +111,32 @@
     .local-pill{
       margin-left:auto;
       padding:7px 9px;
-      border:1px solid #bfe6d5;
+      border:1px solid #f3b7ce;
       border-radius:999px;
-      color:var(--green);
-      background:var(--green-soft);
+      color:#b8326a;
+      background:linear-gradient(135deg,#fff,#ffe4ef);
       font-size:10px;
       font-weight:800;
       white-space:nowrap;
+      box-shadow:0 4px 12px rgba(205,71,124,.10);
     }
+    .personal-banner{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:9px;
+      margin:13px 18px 0;
+      padding:10px 12px;
+      border:1px solid #f2bad0;
+      border-radius:17px;
+      color:#a82f61;
+      background:linear-gradient(135deg,#fff 0,#ffe7f1 48%,#fff3f8 100%);
+      box-shadow:0 7px 18px rgba(193,56,111,.09);
+      text-align:center;
+    }
+    .personal-banner > span{font-size:19px;filter:drop-shadow(0 2px 3px rgba(193,56,111,.14))}
+    .personal-banner b{display:block;font-size:13px;letter-spacing:.08em}
+    .personal-banner small{display:block;margin-top:2px;color:#9a6079;font-size:9px;font-weight:800;letter-spacing:.04em}
     main{padding:18px}
     .page{display:none;animation:fade .18s ease}
     .page.active{display:block}
@@ -144,11 +167,13 @@
       padding:22px;
       border:1px solid #f5d7e3;
       border-radius:28px;
-      background:linear-gradient(135deg,#fff 4%,#fff0f6 100%);
+      background:
+        radial-gradient(circle at 88% 22%,rgba(255,255,255,.95) 0 5px,transparent 6px),
+        linear-gradient(135deg,#fff 4%,#ffeaf3 62%,#fff4f9 100%);
       box-shadow:var(--shadow);
     }
     .hero:after{
-      content:"";
+      content:"♡";
       position:absolute;
       right:-34px;
       top:-38px;
@@ -156,6 +181,11 @@
       height:138px;
       border-radius:50%;
       background:rgba(244,152,186,.18);
+      color:rgba(201,69,120,.18);
+      font-size:96px;
+      line-height:138px;
+      text-align:center;
+      transform:rotate(-12deg);
     }
     .hero-kicker{
       display:inline-flex;
@@ -177,6 +207,23 @@
       max-width:430px;
       font-size:25px;
       line-height:1.38;
+      color:#71314d;
+    }
+    .owner-seal{
+      position:relative;
+      z-index:1;
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      margin-top:14px;
+      padding:7px 11px;
+      border:1px dashed #e487ab;
+      border-radius:999px;
+      color:#b8326a;
+      background:rgba(255,255,255,.84);
+      font-size:10px;
+      font-weight:900;
+      letter-spacing:.08em;
     }
     .hero p{
       position:relative;
@@ -1052,10 +1099,16 @@
       .filters{grid-template-columns:2fr 1fr 1fr}
       .filters .wide{grid-column:auto}
     }
-    @page{size:A4 landscape;margin:7mm}
+    @page{size:A4 landscape;margin:0}
     @media print{
       .private-only{display:none!important}
-      body{background:#fff}
+      html,body{
+        width:297mm!important;
+        min-height:210mm!important;
+        margin:0!important;
+        padding:0!important;
+        background:#fff!important;
+      }
       body > *{display:none!important}
       body.print-roster #roster-sheet,
       body.print-trip #trip-print-sheet{
@@ -1067,6 +1120,9 @@
       body.print-trip #trip-print-sheet .sheet-panel{
         position:static!important;
         overflow:visible!important;
+        width:297mm!important;
+        min-height:210mm!important;
+        padding:7mm!important;
         background:#fff!important;
       }
       #roster-sheet .sheet-head,#roster-sheet .roster-actions,#roster-sheet .roster-intro{
@@ -1136,20 +1192,27 @@
 <body>
   <div class="app">
     <header class="topbar">
-      <div class="brand-mark" aria-hidden="true">P</div>
+      <div class="brand-mark" aria-hidden="true">千</div>
       <div class="brand-copy">
-        <h1>Chii Pocket</h1>
-        <p>― 千春専用 会長手帳 ―</p>
+        <h1>Chii Pocket ♡</h1>
+        <p>小林千春だけの会長手帳</p>
       </div>
-      <div class="local-pill">iPhone内保存</div>
+      <div class="local-pill">🎀 千春専用</div>
     </header>
+
+    <div class="personal-banner">
+      <span aria-hidden="true">🎀</span>
+      <div><b>小林千春 本人専用アプリ</b><small>CHIHARU ONLY ／ 第三者利用・引継ぎ非対応</small></div>
+      <span aria-hidden="true">🩷</span>
+    </div>
 
     <main>
       <section class="page active" id="page-home" data-page="home">
         <div class="hero">
-          <div class="hero-kicker">🩷 今日の会長ポケット</div>
-          <h2>必要なことを、<br>必要なときにすぐ見つける。</h2>
-          <p>家庭・選手・保護者・担当を、ひとつの場所にまとめます。</p>
+          <div class="hero-kicker">🎀 千春のためだけの会長ポケット</div>
+          <h2>ちはる、今日もお疲れさま♡<br>会長仕事はここに全部おまかせ。</h2>
+          <p>小林千春が自分のために作った、世界にひとつの専用手帳。家庭・選手・保護者・担当を、かわいくひとまとめにします。</p>
+          <div class="owner-seal">♡ OWNER：CHIHARU KOBAYASHI ♡</div>
         </div>
 
         <div class="stats" aria-label="登録状況">
@@ -1161,7 +1224,7 @@
 
         <section class="section">
           <div class="section-head">
-            <div><h3>会長メニュー</h3><p>まずは名簿と担当から使えます</p></div>
+            <div><h3>ちはるの会長メニュー</h3><p>千春仕様で、必要な仕事だけをぎゅっと収納</p></div>
           </div>
           <div class="module-grid">
             <button class="module" type="button" data-go="members">
@@ -1201,7 +1264,7 @@
 
       <section class="page" id="page-members" data-page="members">
         <div class="toolbar">
-          <div class="toolbar-title"><h2>家庭・団員</h2><p id="member-count-label">0家庭・0名</p></div>
+          <div class="toolbar-title"><h2>ちはるの家庭・団員</h2><p id="member-count-label">0家庭・0名</p></div>
           <div class="toolbar-actions">
             <button class="secondary" type="button" id="open-roster">▦ 早見一覧</button>
             <button class="primary" type="button" id="add-household">＋ 家庭登録</button>
@@ -1222,7 +1285,7 @@
 
       <section class="page" id="page-roles" data-page="roles">
         <div class="toolbar">
-          <div class="toolbar-title"><h2>担当一覧</h2><p id="role-count-label">0件</p></div>
+          <div class="toolbar-title"><h2>ちはるの担当一覧</h2><p id="role-count-label">0件</p></div>
           <button class="primary" type="button" id="add-role">＋ 担当登録</button>
         </div>
         <label class="field"><span>担当名・人の名前で検索</span><input id="role-search" type="search" placeholder="例：U12カテゴリー長、田中"></label>
@@ -1231,7 +1294,7 @@
 
       <section class="page" id="page-trips" data-page="trips">
         <div class="toolbar">
-          <div class="toolbar-title"><h2>遠征問診票</h2><p id="trip-count-label">0件</p></div>
+          <div class="toolbar-title"><h2>ちはるの遠征問診票</h2><p id="trip-count-label">0件</p></div>
           <button class="primary" type="button" id="add-trip">＋ 問診票を作る</button>
         </div>
         <div class="roster-intro">
@@ -1242,7 +1305,7 @@
 
       <section class="page private-only" id="page-todos" data-page="todos">
         <div class="toolbar">
-          <div class="toolbar-title"><h2>千春メモ</h2><p id="todo-count-label">やること 0件・完了 0件</p></div>
+          <div class="toolbar-title"><h2>ちはるだけの秘密メモ ♡</h2><p id="todo-count-label">やること 0件・完了 0件</p></div>
           <button class="primary" type="button" id="add-todo">＋ メモを追加</button>
         </div>
         <div class="todo-private-note"><span aria-hidden="true">🔐</span><div><b>千春だけの個人用</b><br>ここに書いた内容は、早見一覧・問診票・印刷・PDFには表示しません。</div></div>
@@ -1254,7 +1317,7 @@
       </section>
 
       <section class="page" id="page-settings" data-page="settings">
-        <div class="toolbar-title"><h2>ちーポケット設定</h2><p>保存状況とアプリ情報</p></div>
+        <div class="toolbar-title"><h2>ちはる専用設定</h2><p>小林千春本人の保存状況とアプリ情報</p></div>
         <div class="settings-card">
           <h3>データのバックアップ</h3>
           <p>家庭・選手・保護者・担当・遠征問診票・千春メモ・写真を、ひとつのバックアップファイルに保存できます。</p>
@@ -1271,7 +1334,8 @@
           <h3>保存について</h3>
           <p>家庭・団員・担当・遠征問診票・千春メモの情報は、この端末のSafari内に保存されます。GitHubにアップロードするindex.htmlには、入力した個人情報は入りません。</p>
           <div class="settings-list">
-            <div class="settings-row"><span>保存データ名</span><b>Chii Pocket専用</b></div>
+            <div class="settings-row"><span>専用利用者</span><b>小林千春（本人専用）</b></div>
+            <div class="settings-row"><span>保存データ名</span><b>Chii Pocket 千春専用</b></div>
             <div class="settings-row"><span>最終保存</span><b id="last-saved">未保存</b></div>
             <div class="settings-row"><span>卒団・退団済み</span><b id="archived-count">0家庭</b></div>
           </div>
@@ -1280,7 +1344,7 @@
           <h3>このバージョンでできること</h3>
           <p>選手の複数カテゴリー、家庭ごとの応援車両、カテゴリー別応援班、担当一覧、早見一覧、遠征問診票、千春メモの一覧・完了管理ができます。千春だけのメモは共有用の印刷・PDFには表示しません。</p>
           <div class="settings-list">
-            <div class="settings-row"><span>バージョン</span><b>Ver.6.2 問診票集計・昼食入力対応版</b></div>
+            <div class="settings-row"><span>バージョン</span><b>Ver.6.3 千春専用ラブリー・URLなしPDF対応版</b></div>
             <div class="settings-row"><span>次の追加</span><b>配車表</b></div>
           </div>
         </div>
@@ -2428,7 +2492,7 @@
         }).join("");
       }
       document.getElementById("trip-print-notes").textContent = "連絡事項・メモ：\n" + (trip.notes || "");
-      document.getElementById("trip-print-foot").textContent = "Chii Pocket／作成：" + formatSaved(trip.updatedAt || state.updatedAt);
+      document.getElementById("trip-print-foot").textContent = "作成：" + formatSaved(trip.updatedAt || state.updatedAt);
     }
 
     function openTripPrint(trip){
