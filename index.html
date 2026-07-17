@@ -1235,7 +1235,7 @@
           <button class="primary" type="button" id="add-trip">＋ 問診票を作る</button>
         </div>
         <div class="roster-intro">
-          登録選手をカテゴリーから呼び出し、参加・宿泊・お弁当を選べます。途中保存したあと、編集やA4一覧の作成もできます。
+          登録選手をカテゴリーから呼び出し、参加・宿泊・お弁当の種類を入力できます。途中保存したあと、編集やA4一覧の作成もできます。
         </div>
         <div id="trip-list"></div>
       </section>
@@ -1280,7 +1280,7 @@
           <h3>このバージョンでできること</h3>
           <p>選手の複数カテゴリー、家庭ごとの応援車両、カテゴリー別応援班、担当一覧、早見一覧、遠征問診票、千春メモの一覧・完了管理ができます。千春だけのメモは共有用の印刷・PDFには表示しません。</p>
           <div class="settings-list">
-            <div class="settings-row"><span>バージョン</span><b>Ver.6.1 メモ保存修正版</b></div>
+            <div class="settings-row"><span>バージョン</span><b>Ver.6.2 問診票集計・昼食入力対応版</b></div>
             <div class="settings-row"><span>次の追加</span><b>配車表</b></div>
           </div>
         </div>
@@ -1691,8 +1691,8 @@
             category:player.category || normalized.category || "",
             attendance:player.attendance || "未定",
             lodging:player.lodging || "なし",
-            lunchDay1:player.lunchDay1 || "未定",
-            lunchDay2:player.lunchDay2 || "未定",
+            lunchDay1:player.lunchDay1 || "",
+            lunchDay2:player.lunchDay2 || "",
             note:player.note || ""
           };
         }) : [];
@@ -2210,8 +2210,8 @@
         + "<div class='trip-player-grid'>"
         + "<label class='field'><span>参加</span><select data-trip-player-field='attendance'>" + optionHtml(["参加","欠席","未定"],p.attendance || "未定",null) + "</select></label>"
         + "<label class='field'><span>宿泊する保護者</span><select data-trip-player-field='lodging'>" + optionHtml(["なし","父","母","両親"],p.lodging || "なし",null) + "</select></label>"
-        + "<label class='field'><span>1日目の昼食</span><select data-trip-player-field='lunchDay1'>" + optionHtml(["必要","不要","未定"],p.lunchDay1 || "未定",null) + "</select></label>"
-        + "<label class='field'><span>2日目の昼食</span><select data-trip-player-field='lunchDay2'>" + optionHtml(["必要","不要","未定"],p.lunchDay2 || "未定",null) + "</select></label>"
+        + "<label class='field'><span>1日目の昼食（種類）</span><input data-trip-player-field='lunchDay1' value='" + esc(p.lunchDay1 || "") + "' placeholder='例：幕の内・おにぎり・不要'></label>"
+        + "<label class='field'><span>2日目の昼食（種類）</span><input data-trip-player-field='lunchDay2' value='" + esc(p.lunchDay2 || "") + "' placeholder='例：幕の内・おにぎり・不要'></label>"
         + "<label class='field' style='grid-column:1/-1'><span>備考</span><input data-trip-player-field='note' value='" + esc(p.note || "") + "' placeholder='必要な場合だけ'></label>"
         + "</div></div>";
     }
@@ -2229,8 +2229,8 @@
           category:row.dataset.tripPlayerCategory || "",
           attendance:value("attendance") || "未定",
           lodging:value("lodging") || "なし",
-          lunchDay1:value("lunchDay1") || "未定",
-          lunchDay2:value("lunchDay2") || "未定",
+          lunchDay1:value("lunchDay1"),
+          lunchDay2:value("lunchDay2"),
           note:value("note")
         };
       });
@@ -2268,8 +2268,8 @@
         category:record.category || "",
         attendance:"未定",
         lodging:"なし",
-        lunchDay1:"未定",
-        lunchDay2:"未定",
+        lunchDay1:"",
+        lunchDay2:"",
         note:""
       });
       renderTripPlayerRows(current);
@@ -2298,8 +2298,8 @@
           category:category,
           attendance:"未定",
           lodging:"なし",
-          lunchDay1:"未定",
-          lunchDay2:"未定",
+          lunchDay1:"",
+          lunchDay2:"",
           note:""
         });
         added += 1;
@@ -2400,20 +2400,30 @@
 
     function renderTripPrint(trip){
       currentPrintTripId = trip.id;
+      var tripPlayers = Array.isArray(trip.players) ? trip.players : [];
+      var participatingPlayerTotal = tripPlayers.filter(function(player){
+        return player.attendance === "参加";
+      }).length;
+      var lodgingParentTotal = tripPlayers.reduce(function(total,player){
+        if(["両親","父母","父・母"].indexOf(player.lodging) !== -1) return total + 2;
+        if(["父","母"].indexOf(player.lodging) !== -1) return total + 1;
+        return total;
+      },0);
       document.getElementById("trip-print-title").textContent = trip.tournament || "遠征問診票";
       document.getElementById("trip-print-subtitle").textContent = [formatTripDate(trip.date,trip.time),trip.category,trip.venue].filter(Boolean).join("　／　");
       document.getElementById("trip-print-info").innerHTML = ""
         + printInfoRow("日程",formatTripDate(trip.date,trip.time),"カテゴリー",trip.category)
         + printInfoRow("会場",trip.venue,"応援班",trip.supportGroup)
+        + printInfoRow("選手合計人数",participatingPlayerTotal + "名","宿泊保護者合計人数",lodgingParentTotal + "名")
         + printInfoRow("遠征形態",trip.tripType,"グラウンド",trip.surface)
         + printInfoRow("昼食",trip.lunch,"移動手段",trip.transport)
         + printInfoRow("宿泊先",trip.lodgingName,"バス運転手",trip.busDriver)
         + printInfoRow("宿泊先住所",trip.lodgingAddress,"設備",[trip.laundry ? "ランドリー" + trip.laundry : "",trip.iceMachine ? "製氷機" + trip.iceMachine : "",trip.trash ? "ゴミ：" + trip.trash : ""].filter(Boolean).join("／"));
       var playerHost = document.getElementById("trip-print-players");
-      if(!(trip.players || []).length){
+      if(!tripPlayers.length){
         playerHost.innerHTML = "<tr><td colspan='8' class='center' style='padding:18px'>選手はまだ登録されていません。</td></tr>";
       }else{
-        playerHost.innerHTML = trip.players.map(function(player,index){
+        playerHost.innerHTML = tripPlayers.map(function(player,index){
           return "<tr><td class='center'>" + (index + 1) + "</td><td>" + esc(player.name) + "</td><td class='center'>" + esc(player.grade) + "</td><td class='center'>" + esc(player.attendance) + "</td><td class='center'>" + esc(player.lodging) + "</td><td class='center'>" + esc(player.lunchDay1) + "</td><td class='center'>" + esc(player.lunchDay2) + "</td><td>" + esc(player.note || "") + "</td></tr>";
         }).join("");
       }
