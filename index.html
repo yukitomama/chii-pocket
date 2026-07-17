@@ -1344,7 +1344,7 @@
           <h3>このバージョンでできること</h3>
           <p>選手の複数カテゴリー、家庭ごとの応援車両、カテゴリー別応援班、担当一覧、早見一覧、遠征問診票、千春メモの一覧・完了管理ができます。千春だけのメモは共有用の印刷・PDFには表示しません。</p>
           <div class="settings-list">
-            <div class="settings-row"><span>バージョン</span><b>Ver.6.3 千春専用ラブリー・URLなしPDF対応版</b></div>
+            <div class="settings-row"><span>バージョン</span><b>Ver.6.4 A4縦PDF・URLなし対応版</b></div>
             <div class="settings-row"><span>次の追加</span><b>配車表</b></div>
           </div>
         </div>
@@ -1544,11 +1544,11 @@
     <div class="sheet-panel">
       <div class="sheet-head">
         <button class="sheet-close" type="button" data-close-sheet="trip-print-sheet" aria-label="閉じる">‹</button>
-        <h2>遠征問診票 A4一覧</h2>
+        <h2>遠征問診票 A4縦一覧</h2>
       </div>
       <div class="sheet-body">
         <div class="roster-actions">
-          <button class="primary" type="button" id="print-trip">印刷・PDFにする</button>
+          <button class="primary" type="button" id="print-trip">A4縦PDFを作る</button>
           <button class="ghost" type="button" data-close-sheet="trip-print-sheet">問診票一覧へ戻る</button>
         </div>
         <div class="trip-print-paper" id="trip-print-paper">
@@ -2495,6 +2495,410 @@
       document.getElementById("trip-print-foot").textContent = "作成：" + formatSaved(trip.updatedAt || state.updatedAt);
     }
 
+    function pdfSetFont(context,size,weight){
+      context.font = String(weight || 400) + " " + size + "px \"Hiragino Sans\",\"Yu Gothic\",Meiryo,sans-serif";
+    }
+
+    function pdfCharacters(value){
+      var text = String(value == null ? "" : value);
+      return typeof Array.from === "function" ? Array.from(text) : text.split("");
+    }
+
+    function pdfEllipsize(context,value,maxWidth){
+      var text = String(value == null ? "" : value);
+      if(context.measureText(text).width <= maxWidth) return text;
+      var characters = pdfCharacters(text);
+      while(characters.length && context.measureText(characters.join("") + "…").width > maxWidth){
+        characters.pop();
+      }
+      return characters.join("") + (characters.length ? "…" : "");
+    }
+
+    function pdfWrapLines(context,value,maxWidth,maxLines){
+      var paragraphs = String(value == null ? "" : value).replace(/\r/g,"").split("\n");
+      var lines = [];
+      paragraphs.forEach(function(paragraph){
+        if(!paragraph){
+          lines.push("");
+          return;
+        }
+        var line = "";
+        pdfCharacters(paragraph).forEach(function(character){
+          var candidate = line + character;
+          if(line && context.measureText(candidate).width > maxWidth){
+            lines.push(line);
+            line = character;
+          }else{
+            line = candidate;
+          }
+        });
+        if(line) lines.push(line);
+      });
+      if(!lines.length) lines.push("");
+      if(lines.length > maxLines){
+        var visible = lines.slice(0,maxLines);
+        visible[maxLines - 1] = pdfEllipsize(context,lines.slice(maxLines - 1).join(""),maxWidth);
+        return visible;
+      }
+      return lines;
+    }
+
+    function pdfDrawCell(context,x,y,width,height,value,options){
+      var settings = options || {};
+      context.save();
+      context.fillStyle = settings.fill || "#ffffff";
+      context.fillRect(x,y,width,height);
+      context.strokeStyle = settings.stroke || "#222222";
+      context.lineWidth = settings.lineWidth || 1.5;
+      context.strokeRect(x,y,width,height);
+      context.beginPath();
+      context.rect(x + 2,y + 2,Math.max(0,width - 4),Math.max(0,height - 4));
+      context.clip();
+      var fontSize = settings.fontSize || 18;
+      pdfSetFont(context,fontSize,settings.weight || 400);
+      context.fillStyle = settings.color || "#171717";
+      context.textAlign = settings.align || "left";
+      context.textBaseline = "middle";
+      var padding = settings.padding == null ? 9 : settings.padding;
+      var textWidth = Math.max(1,width - padding * 2);
+      var lines = pdfWrapLines(context,value,textWidth,settings.maxLines || 2);
+      var lineHeight = settings.lineHeight || Math.round(fontSize * 1.22);
+      var startY = y + height / 2 - ((lines.length - 1) * lineHeight) / 2;
+      var textX = settings.align === "center" ? x + width / 2 : (settings.align === "right" ? x + width - padding : x + padding);
+      lines.forEach(function(line,index){
+        context.fillText(line,textX,startY + index * lineHeight);
+      });
+      context.restore();
+    }
+
+    function pdfDrawFittedText(context,value,x,y,maxWidth,maxSize,minSize,weight){
+      var text = String(value == null ? "" : value);
+      var size = maxSize;
+      while(size > minSize){
+        pdfSetFont(context,size,weight);
+        if(context.measureText(text).width <= maxWidth) break;
+        size -= 1;
+      }
+      pdfSetFont(context,size,weight);
+      context.textAlign = "center";
+      context.textBaseline = "middle";
+      context.fillText(pdfEllipsize(context,text,maxWidth),x,y);
+    }
+
+    function pdfTripSubtitle(trip){
+      return [formatTripDate(trip.date,trip.time),trip.category,trip.venue].filter(Boolean).join(" ／ ");
+    }
+
+    function pdfDrawTripBanner(context,trip,x,y,width,height,pageNumber,pageCount,compact){
+      context.save();
+      context.fillStyle = "#ffe56f";
+      context.fillRect(x,y,width,height);
+      context.strokeStyle = "#222222";
+      context.lineWidth = 3;
+      context.strokeRect(x,y,width,height);
+      context.fillStyle = "#171717";
+      if(compact){
+        pdfSetFont(context,17,700);
+        context.textAlign = "center";
+        context.textBaseline = "middle";
+        context.fillText("遠征問診票　" + pageNumber + " / " + pageCount,x + width / 2,y + 20);
+        pdfDrawFittedText(context,trip.tournament || "遠征問診票",x + width / 2,y + 52,width - 40,29,20,800);
+        pdfSetFont(context,15,600);
+        context.fillText(pdfEllipsize(context,pdfTripSubtitle(trip),width - 44),x + width / 2,y + 77);
+      }else{
+        pdfSetFont(context,18,700);
+        context.textAlign = "center";
+        context.textBaseline = "middle";
+        context.fillText("遠征問診票",x + width / 2,y + 22);
+        pdfDrawFittedText(context,trip.tournament || "大会・行事名未入力",x + width / 2,y + 64,width - 44,36,24,800);
+        pdfSetFont(context,17,600);
+        context.fillText(pdfEllipsize(context,pdfTripSubtitle(trip),width - 44),x + width / 2,y + 103);
+      }
+      context.restore();
+    }
+
+    function pdfTripTotals(trip){
+      var players = Array.isArray(trip.players) ? trip.players : [];
+      var participating = players.filter(function(player){return player.attendance === "参加";}).length;
+      var lodgingParents = players.reduce(function(total,player){
+        if(["両親","父母","父・母"].indexOf(player.lodging) !== -1) return total + 2;
+        if(["父","母"].indexOf(player.lodging) !== -1) return total + 1;
+        return total;
+      },0);
+      return {participating:participating,lodgingParents:lodgingParents};
+    }
+
+    function pdfDrawTripInfo(context,trip,x,y,width){
+      var totals = pdfTripTotals(trip);
+      var equipment = [
+        trip.laundry ? "ランドリー" + trip.laundry : "",
+        trip.iceMachine ? "製氷機" + trip.iceMachine : "",
+        trip.trash ? "ゴミ：" + trip.trash : ""
+      ].filter(Boolean).join("／");
+      var rows = [
+        ["日程",formatTripDate(trip.date,trip.time),"カテゴリー",trip.category || "―"],
+        ["会場",trip.venue || "―","応援班",trip.supportGroup || "―"],
+        ["選手合計人数",totals.participating + "名","宿泊保護者合計人数",totals.lodgingParents + "名"],
+        ["遠征形態",trip.tripType || "―","グラウンド",trip.surface || "―"],
+        ["昼食",trip.lunch || "―","移動手段",trip.transport || "―"],
+        ["宿泊先",trip.lodgingName || "―","バス運転手",trip.busDriver || "―"],
+        ["宿泊先住所",trip.lodgingAddress || "―","設備",equipment || "―"]
+      ];
+      var widths = [145,355,165,width - 665];
+      var rowHeight = 54;
+      rows.forEach(function(row,rowIndex){
+        var cellX = x;
+        row.forEach(function(value,columnIndex){
+          var isLabel = columnIndex % 2 === 0;
+          pdfDrawCell(context,cellX,y + rowIndex * rowHeight,widths[columnIndex],rowHeight,value,{
+            fill:isLabel ? "#fff4b7" : "#ffffff",
+            align:isLabel ? "center" : "left",
+            weight:isLabel ? 700 : 500,
+            fontSize:isLabel ? 17 : 18,
+            maxLines:2,
+            padding:8
+          });
+          cellX += widths[columnIndex];
+        });
+      });
+      return y + rows.length * rowHeight;
+    }
+
+    function pdfDrawTripAnswers(context,players,startNumber,x,y,width){
+      var headers = ["No.","選手","学年","参加","宿泊する\n保護者","1日目\n昼食","2日目\n昼食","備考"];
+      var widths = [54,150,78,90,160,140,140,width - 812];
+      var headerHeight = 62;
+      var rowHeight = 50;
+      var cellX = x;
+      headers.forEach(function(header,index){
+        pdfDrawCell(context,cellX,y,widths[index],headerHeight,header,{
+          fill:"#fff4b7",
+          align:"center",
+          weight:700,
+          fontSize:16,
+          maxLines:2,
+          padding:5
+        });
+        cellX += widths[index];
+      });
+      y += headerHeight;
+      if(!players.length){
+        pdfDrawCell(context,x,y,width,60,"選手はまだ登録されていません。",{
+          align:"center",fontSize:18,maxLines:1
+        });
+        return y + 60;
+      }
+      players.forEach(function(player,rowIndex){
+        var values = [
+          startNumber + rowIndex + 1,
+          player.name || "―",
+          player.grade || "―",
+          player.attendance || "―",
+          player.lodging || "―",
+          player.lunchDay1 || "―",
+          player.lunchDay2 || "―",
+          player.note || ""
+        ];
+        var rowX = x;
+        values.forEach(function(value,columnIndex){
+          pdfDrawCell(context,rowX,y + rowIndex * rowHeight,widths[columnIndex],rowHeight,value,{
+            fill:rowIndex % 2 ? "#fffdf6" : "#ffffff",
+            align:[0,2,3,4,5,6].indexOf(columnIndex) !== -1 ? "center" : "left",
+            weight:columnIndex === 1 ? 700 : 500,
+            fontSize:columnIndex === 7 ? 16 : 18,
+            maxLines:2,
+            padding:columnIndex === 7 ? 7 : 6
+          });
+          rowX += widths[columnIndex];
+        });
+      });
+      return y + players.length * rowHeight;
+    }
+
+    function pdfDrawTripNotes(context,trip,x,y,width,height){
+      var headingHeight = 34;
+      pdfDrawCell(context,x,y,width,headingHeight,"連絡事項・メモ",{
+        fill:"#fff4b7",align:"left",weight:700,fontSize:17,maxLines:1,padding:10
+      });
+      pdfDrawCell(context,x,y + headingHeight,width,height - headingHeight,trip.notes || " ",{
+        fill:"#ffffff",align:"left",weight:500,fontSize:18,
+        maxLines:Math.max(1,Math.floor((height - headingHeight - 12) / 23)),
+        lineHeight:23,padding:11
+      });
+    }
+
+    function pdfTripChunks(players){
+      if(players.length <= 18){
+        return [{players:players,start:0,first:true,last:true}];
+      }
+      var chunks = [{players:players.slice(0,18),start:0,first:true,last:false}];
+      var start = 18;
+      var remaining = players.length - start;
+      while(remaining > 25){
+        var middleSize = Math.min(28,remaining - 25);
+        chunks.push({players:players.slice(start,start + middleSize),start:start,first:false,last:false});
+        start += middleSize;
+        remaining -= middleSize;
+      }
+      chunks.push({players:players.slice(start),start:start,first:false,last:true});
+      return chunks;
+    }
+
+    function pdfDrawTripPage(trip,chunk,pageNumber,pageCount){
+      var canvas = document.createElement("canvas");
+      canvas.width = 1240;
+      canvas.height = 1754;
+      var context = canvas.getContext("2d",{alpha:false});
+      if(!context) throw new Error("PDF用の画面を作れませんでした");
+      context.fillStyle = "#ffffff";
+      context.fillRect(0,0,canvas.width,canvas.height);
+      context.imageSmoothingEnabled = true;
+      var x = 50;
+      var y = 50;
+      var width = canvas.width - 100;
+      var bannerHeight = chunk.first ? 125 : 92;
+      pdfDrawTripBanner(context,trip,x,y,width,bannerHeight,pageNumber,pageCount,!chunk.first);
+      y += bannerHeight + 14;
+      if(chunk.first){
+        y = pdfDrawTripInfo(context,trip,x,y,width) + 16;
+      }else{
+        y += 2;
+      }
+      y = pdfDrawTripAnswers(context,chunk.players,chunk.start,x,y,width);
+      if(chunk.last){
+        var noteY = y + 14;
+        var noteHeight = Math.max(96,Math.min(190,1668 - noteY));
+        pdfDrawTripNotes(context,trip,x,noteY,width,noteHeight);
+      }
+      context.fillStyle = "#333333";
+      pdfSetFont(context,15,500);
+      context.textBaseline = "middle";
+      context.textAlign = "left";
+      context.fillText("作成：" + formatSaved(trip.updatedAt || state.updatedAt),x,1718);
+      context.textAlign = "right";
+      context.fillText(pageNumber + " / " + pageCount,x + width,1718);
+      return canvas;
+    }
+
+    function pdfDataUrlBytes(dataUrl){
+      var encoded = String(dataUrl).split(",")[1] || "";
+      var binary = atob(encoded);
+      var bytes = new Uint8Array(binary.length);
+      for(var index = 0;index < binary.length;index += 1){
+        bytes[index] = binary.charCodeAt(index);
+      }
+      return bytes;
+    }
+
+    function pdfAscii(value){
+      return new TextEncoder().encode(String(value));
+    }
+
+    function pdfJoinBytes(parts){
+      var length = parts.reduce(function(total,part){return total + part.length;},0);
+      var joined = new Uint8Array(length);
+      var offset = 0;
+      parts.forEach(function(part){
+        joined.set(part,offset);
+        offset += part.length;
+      });
+      return joined;
+    }
+
+    function pdfBuildA4Portrait(images){
+      var objectCount = 2 + images.length * 3;
+      var objects = new Array(objectCount + 1);
+      var pageIds = images.map(function(image,index){return 3 + index * 3;});
+      objects[1] = pdfAscii("<< /Type /Catalog /Pages 2 0 R >>");
+      objects[2] = pdfAscii("<< /Type /Pages /Count " + images.length + " /Kids [" + pageIds.map(function(idValue){return idValue + " 0 R";}).join(" ") + "] >>");
+      images.forEach(function(image,index){
+        var pageId = 3 + index * 3;
+        var imageId = pageId + 1;
+        var contentId = pageId + 2;
+        var imageName = "Im" + (index + 1);
+        var content = pdfAscii("q\n595.28 0 0 841.89 0 0 cm\n/" + imageName + " Do\nQ\n");
+        objects[pageId] = pdfAscii("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /ProcSet [/PDF /ImageC] /XObject << /" + imageName + " " + imageId + " 0 R >> >> /Contents " + contentId + " 0 R >>");
+        objects[imageId] = pdfJoinBytes([
+          pdfAscii("<< /Type /XObject /Subtype /Image /Width " + image.width + " /Height " + image.height + " /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Interpolate true /Length " + image.bytes.length + " >>\nstream\n"),
+          image.bytes,
+          pdfAscii("\nendstream")
+        ]);
+        objects[contentId] = pdfJoinBytes([
+          pdfAscii("<< /Length " + content.length + " >>\nstream\n"),
+          content,
+          pdfAscii("endstream")
+        ]);
+      });
+      var header = new Uint8Array([37,80,68,70,45,49,46,52,10,37,255,255,255,255,10]);
+      var fileParts = [header];
+      var offsets = new Array(objectCount + 1).fill(0);
+      var currentOffset = header.length;
+      for(var objectId = 1;objectId <= objectCount;objectId += 1){
+        offsets[objectId] = currentOffset;
+        var objectBytes = pdfJoinBytes([
+          pdfAscii(objectId + " 0 obj\n"),
+          objects[objectId],
+          pdfAscii("\nendobj\n")
+        ]);
+        fileParts.push(objectBytes);
+        currentOffset += objectBytes.length;
+      }
+      var xrefOffset = currentOffset;
+      var xref = "xref\n0 " + (objectCount + 1) + "\n0000000000 65535 f \n";
+      for(var xrefId = 1;xrefId <= objectCount;xrefId += 1){
+        xref += ("0000000000" + offsets[xrefId]).slice(-10) + " 00000 n \n";
+      }
+      xref += "trailer\n<< /Size " + (objectCount + 1) + " /Root 1 0 R >>\nstartxref\n" + xrefOffset + "\n%%EOF\n";
+      fileParts.push(pdfAscii(xref));
+      return new Blob([pdfJoinBytes(fileParts)],{type:"application/pdf"});
+    }
+
+    function pdfTripFilename(trip){
+      var name = String(trip.tournament || "遠征問診票")
+        .replace(/[\\\/:*?"<>|\u0000-\u001f]/g,"-")
+        .replace(/\s+/g," ")
+        .trim();
+      return (name || "遠征問診票") + "-A4縦.pdf";
+    }
+
+    async function createTripA4Pdf(trip,button){
+      var originalLabel = button.textContent;
+      button.disabled = true;
+      button.textContent = "A4縦PDFを作成中…";
+      try{
+        var chunks = pdfTripChunks(Array.isArray(trip.players) ? trip.players : []);
+        var images = chunks.map(function(chunk,index){
+          var canvas = pdfDrawTripPage(trip,chunk,index + 1,chunks.length);
+          var dataUrl = canvas.toDataURL("image/jpeg",0.93);
+          var image = {width:canvas.width,height:canvas.height,bytes:pdfDataUrlBytes(dataUrl)};
+          canvas.width = 1;
+          canvas.height = 1;
+          return image;
+        });
+        var blob = pdfBuildA4Portrait(images);
+        var fileName = pdfTripFilename(trip);
+        var pdfFile = typeof File === "function" ? new File([blob],fileName,{type:"application/pdf"}) : null;
+        if(pdfFile && navigator.share && navigator.canShare && navigator.canShare({files:[pdfFile]})){
+          showToast("A4縦PDFができたよ。共有画面で「プリント」か「ファイルに保存」を選んでね");
+          await navigator.share({title:trip.tournament || "遠征問診票",files:[pdfFile]});
+          showToast("A4縦PDFを作成しました");
+        }else{
+          downloadBackup(blob,fileName);
+          showToast("A4縦PDFを作成しました");
+        }
+      }catch(error){
+        if(error && error.name === "AbortError"){
+          showToast("PDFの共有をキャンセルしました");
+        }else{
+          console.error(error);
+          showToast("PDFを作れませんでした。もう一度試してね");
+        }
+      }finally{
+        button.disabled = false;
+        button.textContent = originalLabel;
+      }
+    }
+
     function openTripPrint(trip){
       if(!trip) return;
       renderTripPrint(trip);
@@ -2796,10 +3200,11 @@
     });
     document.getElementById("print-trip").addEventListener("click",function(){
       var trip = state.trips.find(function(item){return item.id === currentPrintTripId;});
-      if(trip) renderTripPrint(trip);
-      document.body.classList.remove("print-roster");
-      document.body.classList.add("print-trip");
-      window.print();
+      if(!trip){
+        showToast("問診票が見つかりませんでした");
+        return;
+      }
+      createTripA4Pdf(trip,this);
     });
     document.getElementById("export-backup").addEventListener("click",exportBackup);
     document.getElementById("import-backup").addEventListener("change",function(event){
