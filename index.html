@@ -1344,7 +1344,7 @@
           <h3>このバージョンでできること</h3>
           <p>選手の複数カテゴリー、家庭ごとの応援車両、カテゴリー別応援班、担当一覧、早見一覧、遠征問診票、千春メモの一覧・完了管理ができます。千春だけのメモは共有用の印刷・PDFには表示しません。</p>
           <div class="settings-list">
-            <div class="settings-row"><span>バージョン</span><b>Ver.6.4 A4縦PDF・URLなし対応版</b></div>
+            <div class="settings-row"><span>バージョン</span><b>Ver.6.5 A4縦・横PDF完全対応版</b></div>
             <div class="settings-row"><span>次の追加</span><b>配車表</b></div>
           </div>
         </div>
@@ -1572,7 +1572,7 @@
     <div class="sheet-panel">
       <div class="sheet-head">
         <button class="sheet-close" type="button" data-close-sheet="roster-sheet" aria-label="閉じる">‹</button>
-        <h2>早見一覧</h2>
+        <h2>早見一覧 A4横</h2>
       </div>
       <div class="sheet-body">
         <div class="roster-title-block">
@@ -1583,7 +1583,7 @@
           登録済みの在団選手を、学年順に自動で並べています。横に動かすとすべての項目を確認できます。
         </div>
         <div class="roster-actions">
-          <button class="primary" type="button" id="print-roster">印刷・PDFにする</button>
+          <button class="primary" type="button" id="print-roster">A4横PDFを作る</button>
           <button class="ghost" type="button" id="refresh-roster">一覧を更新</button>
         </div>
         <div class="table-scroll">
@@ -2805,7 +2805,9 @@
       return joined;
     }
 
-    function pdfBuildA4Portrait(images){
+    function pdfBuildA4(images,landscape){
+      var pageWidth = landscape ? "841.89" : "595.28";
+      var pageHeight = landscape ? "595.28" : "841.89";
       var objectCount = 2 + images.length * 3;
       var objects = new Array(objectCount + 1);
       var pageIds = images.map(function(image,index){return 3 + index * 3;});
@@ -2816,8 +2818,8 @@
         var imageId = pageId + 1;
         var contentId = pageId + 2;
         var imageName = "Im" + (index + 1);
-        var content = pdfAscii("q\n595.28 0 0 841.89 0 0 cm\n/" + imageName + " Do\nQ\n");
-        objects[pageId] = pdfAscii("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /ProcSet [/PDF /ImageC] /XObject << /" + imageName + " " + imageId + " 0 R >> >> /Contents " + contentId + " 0 R >>");
+        var content = pdfAscii("q\n" + pageWidth + " 0 0 " + pageHeight + " 0 0 cm\n/" + imageName + " Do\nQ\n");
+        objects[pageId] = pdfAscii("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 " + pageWidth + " " + pageHeight + "] /Resources << /ProcSet [/PDF /ImageC] /XObject << /" + imageName + " " + imageId + " 0 R >> >> /Contents " + contentId + " 0 R >>");
         objects[imageId] = pdfJoinBytes([
           pdfAscii("<< /Type /XObject /Subtype /Image /Width " + image.width + " /Height " + image.height + " /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Interpolate true /Length " + image.bytes.length + " >>\nstream\n"),
           image.bytes,
@@ -2853,6 +2855,14 @@
       return new Blob([pdfJoinBytes(fileParts)],{type:"application/pdf"});
     }
 
+    function pdfBuildA4Portrait(images){
+      return pdfBuildA4(images,false);
+    }
+
+    function pdfBuildA4Landscape(images){
+      return pdfBuildA4(images,true);
+    }
+
     function pdfTripFilename(trip){
       var name = String(trip.tournament || "遠征問診票")
         .replace(/[\\\/:*?"<>|\u0000-\u001f]/g,"-")
@@ -2885,6 +2895,167 @@
         }else{
           downloadBackup(blob,fileName);
           showToast("A4縦PDFを作成しました");
+        }
+      }catch(error){
+        if(error && error.name === "AbortError"){
+          showToast("PDFの共有をキャンセルしました");
+        }else{
+          console.error(error);
+          showToast("PDFを作れませんでした。もう一度試してね");
+        }
+      }finally{
+        button.disabled = false;
+        button.textContent = originalLabel;
+      }
+    }
+
+    function pdfRosterColumnWidths(totalWidth){
+      var percentages = [3,6,5,3,8,10,4,4,8,8,11,4,9,11,6];
+      var widths = percentages.map(function(percent){return Math.floor(totalWidth * percent / 100);});
+      var used = widths.reduce(function(total,width){return total + width;},0);
+      widths[widths.length - 1] += totalWidth - used;
+      return widths;
+    }
+
+    function pdfRosterValues(row){
+      var player = row.player || {};
+      return [
+        row.overallNo,
+        row.category || "",
+        row.grade || "",
+        row.gradeNo,
+        player.name || "",
+        player.kana || "",
+        player.pledge ? "○" : "",
+        player.number || "",
+        row.motherLine || "",
+        row.fatherLine || "",
+        row.support || "",
+        row.vehicle || "",
+        player.school || "",
+        row.note || "",
+        row.siblings || ""
+      ];
+    }
+
+    function pdfRosterChunks(rows){
+      if(!rows.length) return [{rows:[],start:0}];
+      var chunks = [];
+      for(var start = 0;start < rows.length;start += 40){
+        chunks.push({rows:rows.slice(start,start + 40),start:start});
+      }
+      return chunks;
+    }
+
+    function pdfRosterDateLabel(date){
+      var value = date || new Date();
+      return value.getFullYear() + "/" + (value.getMonth() + 1) + "/" + value.getDate() + " 現在";
+    }
+
+    function pdfRosterCreatedLabel(date){
+      var value = date || new Date();
+      function pad(number){return String(number).padStart(2,"0");}
+      return value.getFullYear() + "/" + (value.getMonth() + 1) + "/" + value.getDate() + " " + pad(value.getHours()) + ":" + pad(value.getMinutes());
+    }
+
+    function pdfDrawRosterPage(chunk,totalRows,pageNumber,pageCount,createdAt){
+      var canvas = document.createElement("canvas");
+      canvas.width = 1754;
+      canvas.height = 1240;
+      var context = canvas.getContext("2d",{alpha:false});
+      if(!context) throw new Error("PDF用の画面を作れませんでした");
+      context.fillStyle = "#ffffff";
+      context.fillRect(0,0,canvas.width,canvas.height);
+      context.imageSmoothingEnabled = true;
+      var x = 38;
+      var y = 34;
+      var width = canvas.width - 76;
+      var bannerHeight = 78;
+      context.fillStyle = "#f8edf2";
+      context.fillRect(x,y,width,bannerHeight);
+      context.strokeStyle = "#3f353a";
+      context.lineWidth = 2;
+      context.strokeRect(x,y,width,bannerHeight);
+      context.fillStyle = "#211b1e";
+      pdfDrawFittedText(context,"中郷FC 早見一覧",x + width / 2,y + 29,width - 44,30,22,800);
+      pdfSetFont(context,14,600);
+      context.textAlign = "center";
+      context.textBaseline = "middle";
+      context.fillText(pdfRosterDateLabel(createdAt) + "　・　在団選手 " + totalRows + "名",x + width / 2,y + 58);
+      y += bannerHeight + 14;
+
+      var headers = ["No.","カテゴリー","学年","学年\nNo.","名前","カナ","誓約書","背番号","ママLINE","パパLINE","応援班","車","学校","備考","兄弟姉妹"];
+      var widths = pdfRosterColumnWidths(width);
+      var headerHeight = 44;
+      var rowHeight = 24;
+      var headerX = x;
+      headers.forEach(function(header,index){
+        pdfDrawCell(context,headerX,y,widths[index],headerHeight,header,{
+          fill:"#f8edf2",align:"center",weight:700,fontSize:11,
+          maxLines:2,lineHeight:13,padding:3,stroke:"#453b40",lineWidth:1.2
+        });
+        headerX += widths[index];
+      });
+      y += headerHeight;
+
+      if(!chunk.rows.length){
+        pdfDrawCell(context,x,y,width,64,"在団選手を登録すると、ここに一覧が表示されます。",{
+          fill:"#ffffff",align:"center",weight:600,fontSize:15,maxLines:1
+        });
+      }else{
+        chunk.rows.forEach(function(row,rowIndex){
+          var values = pdfRosterValues(row);
+          var rowX = x;
+          values.forEach(function(value,columnIndex){
+            var centered = [0,1,2,3,6,7,11].indexOf(columnIndex) !== -1;
+            pdfDrawCell(context,rowX,y + rowIndex * rowHeight,widths[columnIndex],rowHeight,value,{
+              fill:rowIndex % 2 ? "#fffafd" : "#ffffff",
+              align:centered ? "center" : "left",
+              weight:columnIndex === 4 ? 700 : 500,
+              fontSize:[1,5,8,9,10,12,13,14].indexOf(columnIndex) !== -1 ? 10 : 11,
+              maxLines:2,lineHeight:11,padding:3,stroke:"#453b40",lineWidth:1.1
+            });
+            rowX += widths[columnIndex];
+          });
+        });
+      }
+
+      context.fillStyle = "#40373b";
+      pdfSetFont(context,13,500);
+      context.textBaseline = "middle";
+      context.textAlign = "left";
+      context.fillText("作成：" + pdfRosterCreatedLabel(createdAt),x,1204);
+      context.textAlign = "right";
+      context.fillText(pageNumber + " / " + pageCount,x + width,1204);
+      return canvas;
+    }
+
+    async function createRosterA4Pdf(button){
+      var originalLabel = button.textContent;
+      button.disabled = true;
+      button.textContent = "A4横PDFを作成中…";
+      try{
+        var rows = rosterRows();
+        var chunks = pdfRosterChunks(rows);
+        var createdAt = new Date();
+        var images = chunks.map(function(chunk,index){
+          var canvas = pdfDrawRosterPage(chunk,rows.length,index + 1,chunks.length,createdAt);
+          var dataUrl = canvas.toDataURL("image/jpeg",0.94);
+          var image = {width:canvas.width,height:canvas.height,bytes:pdfDataUrlBytes(dataUrl)};
+          canvas.width = 1;
+          canvas.height = 1;
+          return image;
+        });
+        var blob = pdfBuildA4Landscape(images);
+        var fileName = "中郷FC-早見一覧-A4横.pdf";
+        var pdfFile = typeof File === "function" ? new File([blob],fileName,{type:"application/pdf"}) : null;
+        if(pdfFile && navigator.share && navigator.canShare && navigator.canShare({files:[pdfFile]})){
+          showToast("A4横PDFができたよ。共有画面で「プリント」か「ファイルに保存」を選んでね");
+          await navigator.share({title:"中郷FC 早見一覧",files:[pdfFile]});
+          showToast("A4横PDFを作成しました");
+        }else{
+          downloadBackup(blob,fileName);
+          showToast("A4横PDFを作成しました");
         }
       }catch(error){
         if(error && error.name === "AbortError"){
@@ -3194,9 +3365,7 @@
     });
     document.getElementById("print-roster").addEventListener("click",function(){
       renderRoster();
-      document.body.classList.remove("print-trip");
-      document.body.classList.add("print-roster");
-      window.print();
+      createRosterA4Pdf(this);
     });
     document.getElementById("print-trip").addEventListener("click",function(){
       var trip = state.trips.find(function(item){return item.id === currentPrintTripId;});
