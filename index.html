@@ -1413,7 +1413,7 @@
           <h3>このバージョンでできること</h3>
           <p>選手の複数カテゴリー、家庭ごとの応援車両、カテゴリー別応援班と班長、応援班のA4縦PDF、担当一覧、早見一覧、遠征問診票、千春メモの一覧・完了管理ができます。千春だけのメモは共有用の印刷・PDFには表示しません。</p>
           <div class="settings-list">
-            <div class="settings-row"><span>バージョン</span><b>Ver.7.0 応援班一覧・U7対応版</b></div>
+            <div class="settings-row"><span>バージョン</span><b>Ver.7.1 応援班名字表示修正版</b></div>
             <div class="settings-row"><span>次の追加</span><b>配車表</b></div>
           </div>
         </div>
@@ -2294,7 +2294,13 @@
     }
 
     function supportHouseholdName(value){
-      var name = String(value || "").trim().replace(/\s*家\s*$/,"").trim();
+      var name = String(value || "").trim();
+      var familyMarker = name.indexOf("家");
+      if(familyMarker >= 0){
+        name = name.slice(0,familyMarker).trim();
+      }else if(/[\s　]/.test(name)){
+        name = name.split(/[\s　]+/)[0].trim();
+      }
       return name || "名称未登録";
     }
 
