@@ -978,10 +978,72 @@
       border-radius:15px;
       background:#fff9fb;
     }
+    .support-entry .support-leader{
+      grid-column:1/3;
+      min-height:40px;
+    }
     .support-entry .danger-btn{
+      grid-column:3;
+      grid-row:1/3;
+      align-self:stretch;
       min-width:42px;
       min-height:44px;
       padding:8px;
+    }
+    .support-roster-controls{
+      display:grid;
+      grid-template-columns:minmax(0,1fr) auto;
+      gap:9px;
+      align-items:end;
+      margin-bottom:12px;
+    }
+    .support-roster-controls .primary{white-space:nowrap}
+    .support-roster-grid{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:13px;
+    }
+    .support-category-card{
+      overflow:hidden;
+      border:1.5px solid #3d3438;
+      border-radius:12px;
+      color:#171217;
+      background:#fff;
+      box-shadow:0 7px 20px rgba(70,44,56,.08);
+      font-family:"Hiragino Sans","Yu Gothic",sans-serif;
+    }
+    .support-category-table{
+      width:100%;
+      border-collapse:collapse;
+      table-layout:fixed;
+      font-size:12px;
+    }
+    .support-category-table th,.support-category-table td{
+      padding:9px 7px;
+      border:1px solid #3d3438;
+      vertical-align:middle;
+      overflow-wrap:anywhere;
+    }
+    .support-category-table thead th{
+      background:#fff;
+      text-align:center;
+      font-weight:900;
+    }
+    .support-category-table .support-category-name{
+      width:17%;
+      background:#ffe84f;
+      font-size:16px;
+    }
+    .support-category-table .support-group-name{width:17%;text-align:center;font-size:15px}
+    .support-category-table .support-leader-cell{width:24%;font-weight:900}
+    .support-category-table .support-member-cell{line-height:1.55}
+    .support-category-table .support-total-cell{width:15%;text-align:center;font-size:16px;font-weight:900}
+    .support-category-table .support-empty-cell{padding:18px;text-align:center;color:#806d76}
+    .support-roster-legend{
+      margin:12px 0 0;
+      color:#6b5260;
+      font-size:10px;
+      line-height:1.6;
     }
     .roster-intro{
       margin-bottom:13px;
@@ -1098,6 +1160,7 @@
       .module-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
       .filters{grid-template-columns:2fr 1fr 1fr}
       .filters .wide{grid-column:auto}
+      .support-roster-grid.all-categories{grid-template-columns:repeat(2,minmax(0,1fr))}
     }
     @page{size:A4 landscape;margin:0}
     @media print{
@@ -1247,6 +1310,11 @@
               <strong>遠征問診票</strong>
               <span>入力・途中保存・PDF共有</span>
             </button>
+            <button class="module" type="button" id="open-support-roster-home">
+              <span class="module-icon">▦</span>
+              <strong>応援班一覧</strong>
+              <span>カテゴリー別・全カテゴリーをA4縦PDFに</span>
+            </button>
             <button class="module future" type="button" data-future="配車表">
               <span class="soon">NEXT</span>
               <span class="module-icon">🚗</span>
@@ -1266,6 +1334,7 @@
         <div class="toolbar">
           <div class="toolbar-title"><h2>ちはるの家庭・団員</h2><p id="member-count-label">0家庭・0名</p></div>
           <div class="toolbar-actions">
+            <button class="secondary" type="button" id="open-support-roster">▦ 応援班一覧</button>
             <button class="secondary" type="button" id="open-roster">▦ 早見一覧</button>
             <button class="primary" type="button" id="add-household">＋ 家庭登録</button>
           </div>
@@ -1342,9 +1411,9 @@
         </div>
         <div class="settings-card">
           <h3>このバージョンでできること</h3>
-          <p>選手の複数カテゴリー、家庭ごとの応援車両、カテゴリー別応援班、担当一覧、早見一覧、遠征問診票、千春メモの一覧・完了管理ができます。千春だけのメモは共有用の印刷・PDFには表示しません。</p>
+          <p>選手の複数カテゴリー、家庭ごとの応援車両、カテゴリー別応援班と班長、応援班のA4縦PDF、担当一覧、早見一覧、遠征問診票、千春メモの一覧・完了管理ができます。千春だけのメモは共有用の印刷・PDFには表示しません。</p>
           <div class="settings-list">
-            <div class="settings-row"><span>バージョン</span><b>Ver.6.5 A4縦・横PDF完全対応版</b></div>
+            <div class="settings-row"><span>バージョン</span><b>Ver.7.0 応援班一覧・U7対応版</b></div>
             <div class="settings-row"><span>次の追加</span><b>配車表</b></div>
           </div>
         </div>
@@ -1620,6 +1689,26 @@
     </div>
   </div>
 
+  <div class="sheet" id="support-roster-sheet" aria-hidden="true">
+    <div class="sheet-panel">
+      <div class="sheet-head">
+        <button class="sheet-close" type="button" data-close-sheet="support-roster-sheet" aria-label="閉じる">‹</button>
+        <h2>応援班一覧 A4縦</h2>
+      </div>
+      <div class="sheet-body">
+        <div class="roster-intro">
+          家庭登録の「カテゴリー別の応援班」と、家庭の「選手乗車可能人数」から自動で作ります。シゴロの応援はU12が担当するため、応援班表には表示しません。
+        </div>
+        <div class="support-roster-controls">
+          <label class="field"><span>表示するカテゴリー</span><select id="support-roster-category"></select></label>
+          <button class="primary" type="button" id="print-support-roster">A4縦PDFを作る</button>
+        </div>
+        <div class="support-roster-grid all-categories" id="support-roster-preview"></div>
+        <p class="support-roster-legend">※ 丸数字は、家庭に登録されている選手乗車可能人数です。車両を出せない家庭には数字を付けません。乗車人数が未入力の車両がある班は、合計を「＋α」で表示します。</p>
+      </div>
+    </div>
+  </div>
+
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script>
@@ -1629,8 +1718,9 @@
     var STORAGE_KEY = "chiiPocket.v1";
     var BACKUP_DATE_KEY = "chiiPocket.lastBackupAt";
     var grades = ["6年","5年","4年","3年","2年","1年","年長","年中","その他"];
-    var categories = ["U12","U11","U10","U9","U8","シゴロ","全学年","その他"];
-    var supportGroups = ["A班","B班","C班","D班"];
+    var categories = ["U12","U11","U10","U9","U8","U7","シゴロ","全学年","その他"];
+    var supportCategories = ["U12","U11","U10","U9","U8","U7"];
+    var supportGroups = ["A班","B班","C班","D班","E班"];
     var state = loadState();
     var memberStatus = "active";
     var todoStatus = "active";
@@ -1638,7 +1728,7 @@
     var currentPrintTripId = "";
 
     function blankState(){
-      return {version:4,households:[],roles:[],trips:[],todos:[],updatedAt:null};
+      return {version:5,households:[],roles:[],trips:[],todos:[],updatedAt:null};
     }
 
     function playerCategoryList(player){
@@ -1695,7 +1785,7 @@
     }
 
     function migrateState(data){
-      data.version = 4;
+      data.version = 5;
       data.households = Array.isArray(data.households) ? data.households : [];
       data.roles = Array.isArray(data.roles) ? data.roles : [];
       data.trips = Array.isArray(data.trips) ? data.trips : [];
@@ -1725,18 +1815,20 @@
         household.parents.forEach(function(parent){
           if(!Array.isArray(parent.supportGroups)){
             parent.supportGroups = parent.supportGroup
-              ? [{id:id("support"),category:fallbackCategory,group:parent.supportGroup}]
+              ? [{id:id("support"),category:fallbackCategory,group:parent.supportGroup,leader:false}]
               : [];
           }else{
             parent.supportGroups = parent.supportGroups.map(function(entry){
-              if(typeof entry === "string") return {id:id("support"),category:"",group:entry};
+              if(typeof entry === "string") return {id:id("support"),category:"",group:entry,leader:false};
               return {
                 id:entry.id || id("support"),
                 category:entry.category || "",
-                group:entry.group || ""
+                group:entry.group || "",
+                leader:!!entry.leader
               };
             }).filter(function(entry){return entry.category || entry.group;});
           }
+          parent.supportGroups = parent.supportGroups.filter(function(entry){return entry.category !== "シゴロ";});
         });
         var legacyVehicles = household.parents.map(function(parent){return parent && parent.vehicle;}).filter(function(vehicle){return vehicle && typeof vehicle === "object";});
         var legacyVehicle = legacyVehicles.find(function(vehicle){return vehicle.available;})
@@ -1971,14 +2063,15 @@
       document.getElementById("role-category").innerHTML = optionHtml(categories,"","全体・指定なし");
       document.getElementById("trip-category").innerHTML = optionHtml(categories,"","カテゴリーを選択");
       document.getElementById("trip-support-group").innerHTML = optionHtml(supportGroups,"","指定なし");
+      document.getElementById("support-roster-category").innerHTML = optionHtml(supportCategories,"","全カテゴリー");
     }
 
     function parentSupportLabels(parent){
       var entries = Array.isArray(parent.supportGroups) ? parent.supportGroups : [];
       if(!entries.length && parent.supportGroup) return [parent.supportGroup];
       return entries.filter(function(entry){return entry.category || entry.group;}).map(function(entry){
-        if(entry.category && entry.group) return entry.category + "／" + entry.group;
-        return entry.category || entry.group;
+        var label = entry.category && entry.group ? entry.category + "／" + entry.group : (entry.category || entry.group);
+        return label + (entry.leader ? "（班長）" : "");
       });
     }
 
@@ -2198,6 +2291,136 @@
           + "<td class='wrap'>" + esc(row.siblings) + "</td>"
           + "</tr>";
       }).join("");
+    }
+
+    function supportHouseholdName(value){
+      var name = String(value || "").trim().replace(/\s*家\s*$/,"").trim();
+      return name || "名称未登録";
+    }
+
+    function supportCapacity(household){
+      var vehicle = normalizeVehicle(household && household.vehicle);
+      if(!vehicle.available) return {value:null,unknown:false,available:false};
+      var raw = String(vehicle.capacity == null ? "" : vehicle.capacity).trim();
+      if(!raw) return {value:null,unknown:true,available:true};
+      var value = Number(raw);
+      if(!Number.isFinite(value) || value < 0) return {value:null,unknown:true,available:true};
+      return {value:Math.floor(value),unknown:false,available:true};
+    }
+
+    function supportCircledNumber(value){
+      var numbers = ["⓪","①","②","③","④","⑤","⑥","⑦","⑧","⑨","⑩","⑪","⑫","⑬","⑭","⑮","⑯","⑰","⑱","⑲","⑳"];
+      return value >= 0 && value < numbers.length ? numbers[value] : "（" + value + "）";
+    }
+
+    function supportPersonLabel(person){
+      if(!person) return "未設定";
+      if(person.capacity != null) return person.name + supportCircledNumber(person.capacity);
+      if(person.capacityUnknown) return person.name + "（未）";
+      return person.name;
+    }
+
+    function supportRosterAssignments(){
+      var byKey = {};
+      state.households.forEach(function(household){
+        if(household.status === "archived") return;
+        var capacity = supportCapacity(household);
+        (household.parents || []).forEach(function(parent){
+          (Array.isArray(parent.supportGroups) ? parent.supportGroups : []).forEach(function(entry){
+            if(supportCategories.indexOf(entry.category) === -1 || supportGroups.indexOf(entry.group) === -1) return;
+            var key = entry.category + "|" + entry.group + "|" + household.id;
+            if(!byKey[key]){
+              byKey[key] = {
+                householdId:household.id,
+                category:entry.category,
+                group:entry.group,
+                name:supportHouseholdName(household.name),
+                capacity:capacity.value,
+                capacityUnknown:capacity.unknown,
+                vehicleAvailable:capacity.available,
+                leader:false
+              };
+            }
+            if(entry.leader) byKey[key].leader = true;
+          });
+        });
+      });
+      return Object.keys(byKey).map(function(key){return byKey[key];}).sort(function(a,b){
+        var categoryDiff = supportCategories.indexOf(a.category) - supportCategories.indexOf(b.category);
+        if(categoryDiff) return categoryDiff;
+        var groupDiff = supportGroups.indexOf(a.group) - supportGroups.indexOf(b.group);
+        if(groupDiff) return groupDiff;
+        if(a.leader !== b.leader) return a.leader ? -1 : 1;
+        return a.name.localeCompare(b.name,"ja");
+      });
+    }
+
+    function supportRosterData(category,assignments){
+      var source = assignments || supportRosterAssignments();
+      var groups = supportGroups.map(function(group){
+        var people = source.filter(function(person){return person.category === category && person.group === group;});
+        if(!people.length) return null;
+        var leaders = people.filter(function(person){return person.leader;});
+        var leader = leaders.length ? leaders[0] : null;
+        var members = people.filter(function(person){return !leader || person.householdId !== leader.householdId;});
+        var total = people.reduce(function(sum,person){return sum + (person.capacity == null ? 0 : person.capacity);},0);
+        var unknown = people.some(function(person){return person.capacityUnknown;});
+        return {
+          group:group,
+          leader:leader,
+          members:members,
+          people:people,
+          total:total,
+          totalLabel:String(total) + (unknown ? "＋α" : "")
+        };
+      }).filter(Boolean);
+      return {category:category,groups:groups};
+    }
+
+    function supportRosterCardHtml(data){
+      var rows = data.groups.length ? data.groups.map(function(group){
+        var members = group.members.length ? group.members.map(function(person){return esc(supportPersonLabel(person));}).join("　") : "—";
+        return "<tr>"
+          + "<th class='support-group-name'>" + esc(group.group) + "</th>"
+          + "<td class='support-leader-cell'>" + esc(supportPersonLabel(group.leader)) + "</td>"
+          + "<td class='support-member-cell'>" + members + "</td>"
+          + "<td class='support-total-cell'>" + esc(group.totalLabel) + "</td>"
+          + "</tr>";
+      }).join("") : "<tr><td class='support-empty-cell' colspan='4'>応援班の登録はまだありません</td></tr>";
+      return "<section class='support-category-card'><table class='support-category-table'>"
+        + "<thead><tr><th class='support-category-name'>" + esc(data.category) + "</th><th>班長</th><th>班員</th><th>計</th></tr></thead>"
+        + "<tbody>" + rows + "</tbody></table></section>";
+    }
+
+    function renderSupportRoster(){
+      var select = document.getElementById("support-roster-category");
+      if(!select) return;
+      var selected = select.value;
+      var assignments = supportRosterAssignments();
+      var visibleCategories = selected ? [selected] : supportCategories;
+      var host = document.getElementById("support-roster-preview");
+      host.classList.toggle("all-categories",!selected);
+      host.innerHTML = visibleCategories.map(function(category){
+        return supportRosterCardHtml(supportRosterData(category,assignments));
+      }).join("");
+    }
+
+    function clearPreviousSupportLeaders(household){
+      var leaderKeys = {};
+      (household.parents || []).forEach(function(parent){
+        (parent.supportGroups || []).forEach(function(entry){
+          if(entry.leader && entry.category && entry.group) leaderKeys[entry.category + "|" + entry.group] = true;
+        });
+      });
+      if(!Object.keys(leaderKeys).length) return;
+      state.households.forEach(function(other){
+        if(other.id === household.id) return;
+        (other.parents || []).forEach(function(parent){
+          (parent.supportGroups || []).forEach(function(entry){
+            if(leaderKeys[entry.category + "|" + entry.group]) entry.leader = false;
+          });
+        });
+      });
     }
 
     function localDateValue(date){
@@ -3070,6 +3293,145 @@
       }
     }
 
+    function supportEraLabel(date){
+      var year = (date || new Date()).getFullYear();
+      return year >= 2019 ? "R" + (year - 2018) : String(year);
+    }
+
+    function pdfSupportCategoryHeight(data,compact){
+      var rowCount = Math.max(1,data.groups.length);
+      return (compact ? 58 : 72) + rowCount * (compact ? 72 : 98);
+    }
+
+    function pdfDrawSupportCategory(context,data,x,y,width,compact){
+      var headerHeight = compact ? 58 : 72;
+      var rowHeight = compact ? 72 : 98;
+      var groupWidth = Math.round(width * (compact ? .15 : .14));
+      var leaderWidth = Math.round(width * (compact ? .25 : .23));
+      var totalWidth = Math.round(width * (compact ? .15 : .13));
+      var memberWidth = width - groupWidth - leaderWidth - totalWidth;
+      var widths = [groupWidth,leaderWidth,memberWidth,totalWidth];
+      var headings = [data.category,"班長","班員","計"];
+      var headingX = x;
+      headings.forEach(function(heading,index){
+        pdfDrawCell(context,headingX,y,widths[index],headerHeight,heading,{
+          fill:index === 0 ? "#ffe84f" : "#ffffff",
+          align:"center",weight:800,
+          fontSize:index === 0 ? (compact ? 24 : 29) : (compact ? 18 : 22),
+          maxLines:1,padding:5,stroke:"#282226",lineWidth:2
+        });
+        headingX += widths[index];
+      });
+      var rows = data.groups.length ? data.groups : [{group:"—",leader:null,members:[],totalLabel:"—",empty:true}];
+      rows.forEach(function(group,rowIndex){
+        var values = group.empty
+          ? ["—","応援班の登録なし","","—"]
+          : [group.group,supportPersonLabel(group.leader),group.members.map(supportPersonLabel).join("　") || "—",group.totalLabel];
+        var rowX = x;
+        values.forEach(function(value,columnIndex){
+          pdfDrawCell(context,rowX,y + headerHeight + rowIndex * rowHeight,widths[columnIndex],rowHeight,value,{
+            fill:"#ffffff",
+            align:[0,3].indexOf(columnIndex) !== -1 ? "center" : "left",
+            weight:columnIndex === 0 || columnIndex === 1 || columnIndex === 3 ? 800 : 500,
+            fontSize:columnIndex === 0 || columnIndex === 3 ? (compact ? 21 : 25) : (compact ? 16 : 22),
+            maxLines:columnIndex === 2 ? 3 : 2,
+            lineHeight:compact ? 19 : 27,
+            padding:compact ? 7 : 11,
+            stroke:"#282226",lineWidth:2
+          });
+          rowX += widths[columnIndex];
+        });
+      });
+      return y + pdfSupportCategoryHeight(data,compact);
+    }
+
+    function pdfDrawSupportRosterPage(selectedCategory){
+      var canvas = document.createElement("canvas");
+      canvas.width = 1240;
+      canvas.height = 1754;
+      var context = canvas.getContext("2d",{alpha:false});
+      if(!context) throw new Error("PDF用の画面を作れませんでした");
+      context.fillStyle = "#ffffff";
+      context.fillRect(0,0,canvas.width,canvas.height);
+      context.imageSmoothingEnabled = true;
+      var x = 50;
+      var y = 46;
+      var width = canvas.width - 100;
+      var createdAt = new Date();
+      context.fillStyle = "#171217";
+      pdfDrawFittedText(context,supportEraLabel(createdAt) + " 中郷FC 応援班 当番表",canvas.width / 2,y + 35,width - 30,38,27,800);
+      pdfSetFont(context,16,600);
+      context.textAlign = "center";
+      context.textBaseline = "middle";
+      context.fillText(selectedCategory ? selectedCategory + " カテゴリー別一覧" : "全カテゴリー一覧",canvas.width / 2,y + 76);
+      y += 112;
+
+      var assignments = supportRosterAssignments();
+      if(selectedCategory){
+        pdfDrawSupportCategory(context,supportRosterData(selectedCategory,assignments),x,y,width,false);
+      }else{
+        var gap = 24;
+        var cardWidth = (width - gap) / 2;
+        for(var pairIndex = 0;pairIndex < supportCategories.length;pairIndex += 2){
+          var leftData = supportRosterData(supportCategories[pairIndex],assignments);
+          var rightData = supportRosterData(supportCategories[pairIndex + 1],assignments);
+          var pairHeight = Math.max(pdfSupportCategoryHeight(leftData,true),pdfSupportCategoryHeight(rightData,true));
+          pdfDrawSupportCategory(context,leftData,x,y,cardWidth,true);
+          pdfDrawSupportCategory(context,rightData,x + cardWidth + gap,y,cardWidth,true);
+          y += pairHeight + 26;
+        }
+      }
+
+      context.fillStyle = "#3f353a";
+      pdfSetFont(context,15,600);
+      context.textAlign = "left";
+      context.textBaseline = "middle";
+      context.fillText("※ 丸数字は選手乗車可能人数です。未入力の車両がある班は合計を＋αで表示します。",x,1658);
+      pdfSetFont(context,14,500);
+      context.fillText("※ シゴロの応援はU12の応援班が担当します。",x,1687);
+      context.textAlign = "right";
+      context.fillText("作成：" + pdfRosterCreatedLabel(createdAt),x + width,1717);
+      return canvas;
+    }
+
+    async function createSupportRosterA4Pdf(button){
+      var originalLabel = button.textContent;
+      button.disabled = true;
+      button.textContent = "A4縦PDFを作成中…";
+      try{
+        var selectedCategory = document.getElementById("support-roster-category").value;
+        var canvas = pdfDrawSupportRosterPage(selectedCategory);
+        var dataUrl = canvas.toDataURL("image/jpeg",.94);
+        var images = [{width:canvas.width,height:canvas.height,bytes:pdfDataUrlBytes(dataUrl)}];
+        canvas.width = 1;
+        canvas.height = 1;
+        var blob = pdfBuildA4Portrait(images);
+        var fileName = selectedCategory
+          ? "中郷FC-" + selectedCategory + "-応援班一覧-A4縦.pdf"
+          : "中郷FC-全カテゴリー応援班一覧-A4縦.pdf";
+        var title = selectedCategory ? selectedCategory + " 応援班一覧" : "中郷FC 全カテゴリー応援班一覧";
+        var pdfFile = typeof File === "function" ? new File([blob],fileName,{type:"application/pdf"}) : null;
+        if(pdfFile && navigator.share && navigator.canShare && navigator.canShare({files:[pdfFile]})){
+          showToast("A4縦PDFができたよ。共有画面で「プリント」か「ファイルに保存」を選んでね");
+          await navigator.share({title:title,files:[pdfFile]});
+          showToast("応援班一覧PDFを作成しました");
+        }else{
+          downloadBackup(blob,fileName);
+          showToast("応援班一覧PDFを作成しました");
+        }
+      }catch(error){
+        if(error && error.name === "AbortError"){
+          showToast("PDFの共有をキャンセルしました");
+        }else{
+          console.error(error);
+          showToast("PDFを作れませんでした。もう一度試してね");
+        }
+      }finally{
+        button.disabled = false;
+        button.textContent = originalLabel;
+      }
+    }
+
     function openTripPrint(trip){
       if(!trip) return;
       renderTripPrint(trip);
@@ -3081,6 +3443,7 @@
       renderMembers();
       renderRoles();
       renderRoster();
+      renderSupportRoster();
       renderTrips();
       renderTodos();
     }
@@ -3105,10 +3468,11 @@
     }
 
     function supportEntryHtml(entry,index){
-      var item = entry || {id:id("support"),category:"",group:""};
+      var item = entry || {id:id("support"),category:"",group:"",leader:false};
       return "<div class='support-entry' data-support-id='" + esc(item.id || id("support")) + "'>"
-        + "<label class='field'><span>カテゴリー</span><select data-support-field='category'>" + optionHtml(categories,item.category || "","未設定") + "</select></label>"
+        + "<label class='field'><span>カテゴリー</span><select data-support-field='category'>" + optionHtml(supportCategories,item.category || "","未設定") + "</select></label>"
         + "<label class='field'><span>応援班</span><select data-support-field='group'>" + optionHtml(supportGroups,item.group || "","未設定") + "</select></label>"
+        + "<label class='check-row support-leader'><input type='checkbox' data-support-field='leader'" + (item.leader ? " checked" : "") + ">この班の班長</label>"
         + "<button class='danger-btn' type='button' data-remove-support aria-label='この応援班を削除'>×</button>"
         + "</div>";
     }
@@ -3126,12 +3490,12 @@
         ? p.supportGroups
         : [{id:id("support"),category:"",group:""}];
       return "<section class='form-card parent-editor' data-parent-index='" + index + "'>"
-        + "<div class='form-card-head'><div><h3>" + esc(p.relation || (index === 0 ? "父" : "母")) + "</h3><p class='hint'>応援班は保護者ごとに登録します</p></div></div>"
+        + "<div class='form-card-head'><div><h3>" + esc(p.relation || (index === 0 ? "父" : "母")) + "</h3><p class='hint'>応援班一覧では家庭名だけを表示します</p></div></div>"
         + "<div class='grid'>"
         + "<div class='full'>" + photoControlHtml(p.photo || "",p.relation || "親") + "</div>"
         + "<label class='field'><span>名前</span><input data-parent-field='name' value='" + esc(p.name || "") + "' placeholder='氏名'></label>"
         + "<label class='field'><span>LINE登録名</span><input data-parent-field='lineName' value='" + esc(p.lineName || "") + "' placeholder='LINEで見える名前'></label>"
-        + "<div class='full'><div class='form-card-head' style='margin:2px 0 8px'><div><span class='label'>カテゴリー別の応援班</span><p class='hint'>U10／A班、U11／B班のように複数追加できます</p></div><button class='small-btn' type='button' data-add-support>＋ 追加</button></div><div class='support-list' data-support-list>" + groupEntries.map(supportEntryHtml).join("") + "</div></div>"
+        + "<div class='full'><div class='form-card-head' style='margin:2px 0 8px'><div><span class='label'>カテゴリー別の応援班</span><p class='hint'>A〜E班と班長を登録できます。シゴロはU12の応援班を使います</p></div><button class='small-btn' type='button' data-add-support>＋ 追加</button></div><div class='support-list' data-support-list>" + groupEntries.map(supportEntryHtml).join("") + "</div></div>"
         + "</div></section>";
     }
 
@@ -3257,9 +3621,10 @@
           return {
             id:entry.dataset.supportId || id("support"),
             category:entry.querySelector("[data-support-field='category']").value,
-            group:entry.querySelector("[data-support-field='group']").value
+            group:entry.querySelector("[data-support-field='group']").value,
+            leader:entry.querySelector("[data-support-field='leader']").checked
           };
-        }).filter(function(entry){return entry.category || entry.group;});
+        }).filter(function(entry){return entry.category && entry.group;});
         return {
           relation:index === 0 ? "父" : "母",
           name:val("name"),
@@ -3355,6 +3720,12 @@
     document.getElementById("add-role").addEventListener("click",function(){openRoleEditor(null);});
     document.getElementById("add-trip").addEventListener("click",function(){openTripEditor(null);});
     document.getElementById("add-todo").addEventListener("click",function(){openTodoEditor(null);});
+    function openSupportRoster(){
+      renderSupportRoster();
+      openSheet("support-roster-sheet");
+    }
+    document.getElementById("open-support-roster-home").addEventListener("click",openSupportRoster);
+    document.getElementById("open-support-roster").addEventListener("click",openSupportRoster);
     document.getElementById("open-roster").addEventListener("click",function(){
       renderRoster();
       openSheet("roster-sheet");
@@ -3366,6 +3737,11 @@
     document.getElementById("print-roster").addEventListener("click",function(){
       renderRoster();
       createRosterA4Pdf(this);
+    });
+    document.getElementById("support-roster-category").addEventListener("change",renderSupportRoster);
+    document.getElementById("print-support-roster").addEventListener("click",function(){
+      renderSupportRoster();
+      createSupportRosterA4Pdf(this);
     });
     document.getElementById("print-trip").addEventListener("click",function(){
       var trip = state.trips.find(function(item){return item.id === currentPrintTripId;});
@@ -3436,7 +3812,7 @@
       if(addSupport){
         var supportHost = addSupport.closest(".parent-editor").querySelector("[data-support-list]");
         var supportCount = supportHost.querySelectorAll(".support-entry").length;
-        supportHost.insertAdjacentHTML("beforeend",supportEntryHtml({id:id("support"),category:"",group:""},supportCount));
+        supportHost.insertAdjacentHTML("beforeend",supportEntryHtml({id:id("support"),category:"",group:"",leader:false},supportCount));
       }
       var removeSupport = event.target.closest("[data-remove-support]");
       if(removeSupport){
@@ -3444,6 +3820,8 @@
         var supportEntries = supportList.querySelectorAll(".support-entry");
         if(supportEntries.length === 1){
           supportEntries[0].querySelectorAll("select").forEach(function(el){el.value = "";});
+          var leaderInput = supportEntries[0].querySelector("[data-support-field='leader']");
+          if(leaderInput) leaderInput.checked = false;
         }else{
           removeSupport.closest(".support-entry").remove();
         }
@@ -3478,6 +3856,7 @@
         showToast("家庭名を入力してね");
         return;
       }
+      clearPreviousSupportLeaders(household);
       var index = state.households.findIndex(function(h){return h.id === household.id;});
       if(index >= 0) state.households[index] = household;
       else state.households.push(household);
